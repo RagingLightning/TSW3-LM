@@ -67,7 +67,7 @@ namespace TSW3LM
         {
             while (true)
             {
-                Process TswMonitor = Process.Start("TSW3Mon.exe");
+                Process TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 0.5");
                 TswMonitor.WaitForExit();
                 Game.Load();
 
