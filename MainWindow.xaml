@@ -1,9 +1,9 @@
-﻿<Window x:Class="TSW2_Livery_Manager.MainWindow"
+﻿<Window x:Class="TSW3LM.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:TSW2_Livery_Manager"
+        xmlns:local="clr-namespace:TSW3LM"
         mc:Ignorable="d"
         Title="TSW2 Livery Manager by RagingLightning" ResizeMode="CanResizeWithGrip" MinWidth="820" MinHeight="455" Width="820" Height="455">
     <Grid>

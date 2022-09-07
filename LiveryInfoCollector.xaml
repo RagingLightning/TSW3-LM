@@ -1,0 +1,23 @@
+﻿<Window x:Class="TSW3LM.LiveryInfoCollector"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TSW3LM"
+        mc:Ignorable="d"
+        Title="LiveryInfoCollector" Height="450" Width="800" Topmost="True" HorizontalAlignment="Center" VerticalAlignment="Center" LostFocus="Window_SetOnTop" Deactivated="Window_SetOnTop">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="0*"/>
+        </Grid.ColumnDefinitions>
+        <Label Content="You just saved a livery in TSW3" HorizontalAlignment="Center" Margin="0,13,0,0" VerticalAlignment="Top" FontSize="48" RenderTransformOrigin="0.511,0.241" Height="74" Width="656"/>
+        <Label Content="Please enter some Information for the Livery Manager:" HorizontalAlignment="Center" Margin="0,125,0,0" VerticalAlignment="Top" FontSize="24"/>
+        <Label Content="Name of the Livery" HorizontalAlignment="Left" Margin="23,225,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Label Content="Model the Livery is for" HorizontalAlignment="Left" Margin="23,279,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <TextBox x:Name="txtName" HorizontalAlignment="Left" Margin="274,229,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="500" FontSize="20"/>
+        <TextBox x:Name="txtModel" HorizontalAlignment="Left" Margin="274,286,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="500" FontSize="20"/>
+        <Button Content="OK" HorizontalAlignment="Left" Margin="273,0,0,20" VerticalAlignment="Bottom" FontSize="36" IsDefault="True" Width="241" Click="Confirm"/>
+        <Button Content="Cancel" HorizontalAlignment="Right" Margin="0,0,20,20" VerticalAlignment="Bottom" FontSize="36" IsCancel="True" Width="133" Height="51" Click="Cancel"/>
+    </Grid>
+</Window>

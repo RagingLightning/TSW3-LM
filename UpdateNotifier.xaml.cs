@@ -11,7 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace TSW2LM
+namespace TSW3LM
 {
     /// <summary>
     /// Interaction logic for UpdateNotifier.xaml
