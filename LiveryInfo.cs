@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -30,7 +31,21 @@ namespace TSW3LM
         {
             Log.AddLogMessage("Loading Livery info...", "LI:Load");
             Data = JsonConvert.DeserializeObject<Dictionary<string, Info>>(File.ReadAllText(Path));
-            Log.AddLogMessage("Livery info loaded.", "LI:Load");
+            Log.AddLogMessage("Livery info loaded.", "LI:Load", Log.LogLevel.DEBUG);
+        }
+
+        internal static void Save()
+        {
+            Log.AddLogMessage("Saving Livery info...", "LI:Save");
+            try
+            {
+                File.WriteAllText(Path, JsonConvert.SerializeObject(Data));
+            } catch (Exception e)
+            {
+                Log.AddLogMessage($"Error while saving livery info: {e.Message}", "LI:Save", Log.LogLevel.WARNING);
+                return;
+            }
+            Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
         }
 
         internal static Info Get(string liveryId)
@@ -55,12 +70,16 @@ namespace TSW3LM
                     Log.AddLogMessage($"New Livery Id: {liveryId}");
                 }
                 Data.Add(liveryId, new Info(name, model));
+
+                Save();
                 return liveryId;
             }
 
             Data[liveryId].Name = name;
             Data[liveryId].Model = model;
-            return null;
+
+            Save();
+            return liveryId;
         }
 
         internal static void Collector()
@@ -84,6 +103,8 @@ namespace TSW3LM
                         }
                     }
                 }
+
+                Save();
             }
         }
 
