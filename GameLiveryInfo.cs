@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
+using System.Windows.Navigation;
 
 namespace TSW3LM
 {
@@ -118,17 +120,21 @@ namespace TSW3LM
                 }
                 Game.Load();
 
-                foreach (Game.Livery livery in Game.Liveries.Values)
+                List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
+
+                foreach (string id in gameIds.Concat(Data.Keys))
                 {
-                    if (!Data.ContainsKey(livery.ID))
+                    if (!Data.ContainsKey(id) && gameIds.Contains(id))
                     {
                         Collector.Prepare("You just saved a livery in TSW3");
                         if (Collector.ShowDialog() == true)
                         {
                             Info info = new Info(Collector.LiveryName, Collector.LiveryModel);
-                            Data.Add(livery.ID, info);
+                            Data.Add(id, info);
                         }
                     }
+                    else if (Data.ContainsKey(id) && !gameIds.Contains(id))
+                        Data.Remove(id);
                 }
                 
                 Save();
