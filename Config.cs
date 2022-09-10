@@ -63,6 +63,12 @@ namespace TSW3LM
             set { entries.MaxGameLiveries = value; if (!entries.SkipAutosave) Save(); }
         }
 
+        public static bool CollectLiveryData
+        {
+            get { return entries.CollectLiveryData; }
+            set { entries.CollectLiveryData = value; if (!entries.SkipAutosave) Save(); }
+        }
+
         private static void Save()
         {
             Log.AddLogMessage("Saving Config...", "Config::Save", Log.LogLevel.DEBUG);
@@ -85,6 +91,7 @@ namespace TSW3LM
             internal bool NoUpdate = false;
             internal bool DevUpdates = false;
             internal int MaxGameLiveries = 300;
+            internal bool CollectLiveryData = true;
 
             internal void ApplyDefaults()
             {
@@ -94,6 +101,7 @@ namespace TSW3LM
                 NoUpdate = false;
                 DevUpdates = false;
                 MaxGameLiveries = 300;
+                CollectLiveryData = true;
             }
         }
 

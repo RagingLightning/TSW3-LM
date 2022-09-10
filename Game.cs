@@ -91,17 +91,24 @@ namespace TSW3LM
             UESerializer.Write(File.Open(Config.GamePath, FileMode.Create, FileAccess.Write), GameData);
         }
 
+        internal static void Add(Livery livery)
+        {
+            int index = Enumerable.Range(0, Liveries.Count).First(i => !Liveries.ContainsKey(i));
+            Liveries[index] = livery;
+        }
+
         internal class Livery
         {
-            internal string ID { get; set; }
+            internal string ID {
+                get { return ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value; }
+                set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value = value; } 
+            }
 
             internal UEGenericStructProperty GvasBaseProperty;
 
             internal Livery(UEGenericStructProperty baseProp)
             {
                 GvasBaseProperty = baseProp;
-
-                ID = ((UEStringProperty) baseProp.Properties.First(p => p is UEStringProperty)).Value;
 
                 Log.AddLogMessage($"Livery {ID} loaded successfully", "G:Livery:<init>", Log.LogLevel.DEBUG);
 

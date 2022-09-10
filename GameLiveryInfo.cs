@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 
 namespace TSW3LM
 {
-    internal static class LiveryInfo
+    internal static class GameLiveryInfo
     {
+        internal static Process TswMonitor;
 
         private static string Path;
 
@@ -48,9 +50,21 @@ namespace TSW3LM
             Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
         }
 
-        internal static Info Get(string liveryId)
+        internal static Info Get(string liveryId, string cause = "Livery Information")
         {
-            return Data.GetValueOrDefault(liveryId, new Info(liveryId, "<unknown>"));
+            if (Data.ContainsKey(liveryId))
+                return Data[liveryId];
+            LiveryInfoCollector collector = new LiveryInfoCollector(cause);
+            collector.ShowActivated = true;
+            if (collector.ShowDialog() == true)
+            {
+                Info info = new Info(collector.Name, collector.Model);
+                Data.Add(liveryId, info);
+                return info;
+            } else
+            {
+                return new Info();
+            }
         }
 
         internal static string SetInfo(string liveryId, string name, string model, bool replace = false)
@@ -84,27 +98,33 @@ namespace TSW3LM
 
         internal static void Collector()
         {
-            while (true)
+            try
             {
-                Process TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 0.5");
-                TswMonitor.WaitForExit();
-                Game.Load();
-
-                foreach (Game.Livery livery in Game.Liveries.Values)
+                while (true)
                 {
-                    if (!Data.ContainsKey(livery.ID))
+                    TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 0.5");
+                    TswMonitor.WaitForExit();
+                    Game.Load();
+
+                    foreach (Game.Livery livery in Game.Liveries.Values)
                     {
-                        LiveryInfoCollector collector = new LiveryInfoCollector();
-                        collector.ShowActivated = true;
-                        if (collector.ShowDialog() == true)
+                        if (!Data.ContainsKey(livery.ID))
                         {
-                            Info info = new Info(collector.Name, collector.Model);
-                            Data.Add(livery.ID, info);
+                            LiveryInfoCollector collector = new LiveryInfoCollector("You just saved a livery in TSW3");
+                            collector.ShowActivated = true;
+                            if (collector.ShowDialog() == true)
+                            {
+                                Info info = new Info(collector.Name, collector.Model);
+                                Data.Add(livery.ID, info);
+                            }
                         }
                     }
-                }
 
-                Save();
+                    Save();
+                }
+            } catch (ThreadAbortException)
+            {
+                TswMonitor.Kill();
             }
         }
 
@@ -115,7 +135,7 @@ namespace TSW3LM
             internal string Name;
             internal string Model;
 
-            internal Info(string name, string model)
+            internal Info(string name = "<unnamed>", string model = "<unknown>")
             {
                 Name = name;
                 Model = model;

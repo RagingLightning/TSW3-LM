@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xml.Linq;
+﻿using System.Windows;
 
 namespace TSW3LM
 {
@@ -21,16 +10,10 @@ namespace TSW3LM
         internal string Name { get { return txtName.Text; } }
         internal string Model { get { return txtModel.Text; } }
 
-        public LiveryInfoCollector()
+        public LiveryInfoCollector(string cause)
         {
             InitializeComponent();
-        }
-
-        private void Window_SetOnTop(object sender, RoutedEventArgs e)
-        {
-            Window window = (Window)sender;
-            window.Topmost = true;
-            window.Activate();
+            lblCause.Content = cause;
         }
 
         private void Cancel(object sender, RoutedEventArgs e)
@@ -43,6 +26,20 @@ namespace TSW3LM
         {
             DialogResult = false;
             Close();
+        }
+
+        private void Window_SetOnTopD(object sender, System.EventArgs e)
+        {
+            Window window = (Window)sender;
+            window.Topmost = true;
+            window.Activate();
+        }
+
+        private void Window_SetOnTopL(object sender, RoutedEventArgs e)
+        {
+            Window window = (Window)sender;
+            window.Topmost = true;
+            window.Activate();
         }
     }
 }

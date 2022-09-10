@@ -1,4 +1,5 @@
-﻿#Persistent
+﻿#SingleInstance Force
+#Persistent
 FolderPath := A_Args[1]   ; set the folder to watch
 interval := A_Args[2]     ; set the interval
 

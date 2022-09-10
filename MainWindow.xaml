@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TSW3LM"
         mc:Ignorable="d"
-        Title="TSW2 Livery Manager by RagingLightning" ResizeMode="CanResizeWithGrip" MinWidth="820" MinHeight="455" Width="820" Height="455">
+        Title="TSW2 Livery Manager by RagingLightning" ResizeMode="CanResizeWithGrip" MinWidth="820" MinHeight="455" Width="820" Height="455" Closing="Close">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="290*" MinHeight="290"/>

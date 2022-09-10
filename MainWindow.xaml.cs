@@ -10,6 +10,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace TSW3LM
 {
@@ -20,7 +21,7 @@ namespace TSW3LM
     {
         private const string VERSION = "0.0.1";
 
-        private Thread InfoCollectorThread = new Thread(LiveryInfo.Collector);
+        private Thread InfoCollectorThread = new Thread(GameLiveryInfo.Collector);
 
         [DllImport("Kernel32.dll")]
         public static extern bool AttachConsole(int processId);
@@ -34,7 +35,7 @@ namespace TSW3LM
             AttachConsole(-1);
 
             Config.Init("TSW3LM.json");
-            LiveryInfo.Init("LiveryInfo.json");
+            GameLiveryInfo.Init("LiveryInfo.json");
 
             Log.AddLogFile("TSW2LM.log", Log.LogLevel.INFO);
             if (Environment.GetCommandLineArgs().Contains("-debug"))
@@ -66,6 +67,10 @@ namespace TSW3LM
                             break;
                         case "-reset":
                             Config.ApplyDefaults();
+                            break;
+                        case "-noInfoCollect":
+                            if (!(args[i + 1] == "true" || args[i + 1] == "false")) PrintHelp();
+                            Config.CollectLiveryData = args[i + 1] == "false";
                             break;
                         case "-help":
                         case "-?":
@@ -148,7 +153,11 @@ namespace TSW3LM
             InfoCollectorThread.Start();
 
         }
-
+        
+        private void Close(object sender, CancelEventArgs e)
+        {
+            InfoCollectorThread.Abort();
+        }
         private void PrintHelp()
         {
             Console.WriteLine();
@@ -163,6 +172,9 @@ namespace TSW3LM
             Console.WriteLine();
             Console.WriteLine(" -reset :");
             Console.WriteLine("    Resets all config options back to default");
+            Console.WriteLine();
+            Console.WriteLine(" -noInfoCollect <true|false> :");
+            Console.WriteLine("    Toggle TSW3 Livery Info collection");
             Console.WriteLine();
             Console.WriteLine(" -noUpdate <true|false> :");
             Console.WriteLine("    Toggle automatic update check at startup");
@@ -190,7 +202,7 @@ namespace TSW3LM
                 else
                 {
                     string Id = Game.Liveries[i].ID;
-                    LiveryInfo.Info Info = LiveryInfo.Get(Id);
+                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
                     Text = $"({i}) {Info.Name} for {Info.Model}";
                 }
                 lstGameLiveries.Items.Add(Text);
@@ -207,32 +219,49 @@ namespace TSW3LM
             foreach (int i in Library.Liveries.Keys)
             {
                 Library.Livery livery = Library.Liveries[i];
-                string Text = $"{livery.Name} for {livery.Model} <{livery.Path}>";
+                string Text = $"{livery.Name} for {livery.Model} <{livery.FileName}>";
                 lstLibraryLiveries.Items.Add(Text);
                 Log.AddLogMessage($"Added library livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
             }
 
             Log.AddLogMessage("Library liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }
+        private void ImportLivery(Library.Livery ll)
+        {
+            Log.AddLogMessage($"Importing livery from file {ll.FileName}", "MW:ImportLivery");
+            string registeredId = GameLiveryInfo.SetInfo(ll.Id, ll.Name, ll.Model);
+            if (registeredId != ll.Id)
+            {
+                Log.AddLogMessage($"ID {ll.Id} already in use; new ID is {registeredId}", "MW:ImportLivery", Log.LogLevel.DEBUG);
+                ll.Id = registeredId;
+                Library.Save(ll);
+            }
 
-        private Game.Livery GetSelectedGameLivery()
-        {
-            if (lstGameLiveries.SelectedItem == null || lstGameLiveries.SelectedIndex == -1) return null;
-            return Game.Liveries[lstGameLiveries.SelectedIndex];
-        }
-        private Game.Livery ImportLivery(Library.Livery livery)
-        {
-            throw new NotImplementedException();
+            Game.Add(new Game.Livery(ll.GvasBaseProperty));
+            Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id}", "MW:ImportLivery", Log.LogLevel.DEBUG);
         }
 
-        private Library.Livery ExportLivery(Game.Livery livery)
+        private void ExportLivery(Game.Livery gl)
         {
-            throw new NotImplementedException();
-        }
+            Log.AddLogMessage($"Exporting livery {gl.ID}", "MW:ExportLivery");
+            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID);
+            string fileName = Utils.SanitizeFileName($"{Info.Name} for {Info.Model}.tsw3");
+            if (Info.Name == "<unnamed>" && Info.Model == "<unknown>")
+            {
+                Log.AddLogMessage($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
+                SaveFileDialog Dialog = new SaveFileDialog();
+                Dialog.InitialDirectory = Config.LibraryPath;
+                Dialog.Filter = "TSW3 Livery File (*.tsw3)|*.tsw3";
+                Dialog.DefaultExt = "*.tsw3";
+                if (Dialog.ShowDialog() == true)
+                    fileName = Utils.SanitizeFileName(Dialog.SafeFileName);
+            }
 
-        private void DeleteLivery(Game.Livery livery)
-        {
-            throw new NotImplementedException();
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, Info.Name, Info.Model);
+            Library.Add(ll);
+            Library.Save(ll);
+
+            Log.AddLogMessage($"Livery successfully exported (ID: {ll.Id}", "MW:ImportLivery", Log.LogLevel.DEBUG);
         }
 
         private string DetermineWindowsStoreSaveFile()
@@ -298,6 +327,7 @@ namespace TSW3LM
 
             lblMessage.Content = "";
             ExportLivery(Game.Liveries[lstGameLiveries.SelectedIndex]);
+            UpdateLibraryGui();
         }
 
         private void btnImport_Click(object sender, RoutedEventArgs e)
@@ -310,6 +340,7 @@ namespace TSW3LM
 
             lblMessage.Content = "";
             ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
+            UpdateGameGui();
         }
 
         private void btnJExport_Click(object sender, RoutedEventArgs e)     //Reuse for TSW2 import maybe?
@@ -317,7 +348,7 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        private void btnJImport_Click(object sender, RoutedEventArgs e)
+        private void btnJImport_Click(object sender, RoutedEventArgs e)     //Reuse for TSW2 import maybe?
         {
             throw new NotImplementedException();
         }
@@ -341,6 +372,9 @@ namespace TSW3LM
             }
             Library.Load();
             UpdateLibraryGui();
+
+            if (Config.LibraryPath != "" && Config.GamePath != "")
+                ((Data)DataContext).Useable = true;
         }
 
         private void lstGame_Change(object sender, SelectionChangedEventArgs e)
@@ -378,6 +412,9 @@ namespace TSW3LM
             {
                 Log.AddLogMessage($"Error while changing game folder: {ex.Message}", "MW:GameDirClick", Log.LogLevel.ERROR);
             }
+
+            if (Config.LibraryPath != "" && Config.GamePath != "")
+                ((Data)DataContext).Useable = true;
         }
 
         private void btnBackup_Click(object sender, RoutedEventArgs e)
@@ -440,7 +477,8 @@ namespace TSW3LM
                 lblMessage.Content = "Something went wrong, please ensure you:\n - Have a Game Livery selected\n\nif you need help, please @RagingLightning on discord or creare an issue on github";
                 return;
             }
-            DeleteLivery(Game.Liveries[lstGameLiveries.SelectedIndex]);
+            Game.Liveries.Remove(lstGameLiveries.SelectedIndex);
+            UpdateGameGui();
         }
     }
 

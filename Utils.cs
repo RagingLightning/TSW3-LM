@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Windows.Controls;
 
 namespace TSW3LM
 {
@@ -109,6 +110,16 @@ namespace TSW3LM
                 }
             }
             return -1;
+        }
+
+        internal static string SanitizeFileName(string name)
+        {
+            char[] illegalCharacters = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
+            foreach (char c in illegalCharacters)
+            {
+                name = name.Replace(c, '-');
+            }
+            return name;
         }
 
     }
