@@ -74,7 +74,7 @@ namespace TSW3LM
             Log.AddLogMessage($"Saving library livery {livery.Id}", "L:Save");
             try
             {
-                File.WriteAllText(Config.LibraryPath + livery.FileName, JsonConvert.SerializeObject(livery));
+                File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery));
             }
             catch (Exception e)
             {
@@ -84,25 +84,23 @@ namespace TSW3LM
 
         internal static void Add(Livery livery)
         {
-            int index = Enumerable.Range(0, Liveries.Count).First(i => !Liveries.ContainsKey(i));
+            int index = Enumerable.Range(0, Liveries.Count+1).First(i => !Liveries.ContainsKey(i));
             Liveries[index] = livery;
         }
 
         internal class Livery
         {
-            [JsonIgnore]
             internal string FileName { get; set; }
-            [JsonIgnore]
             internal string Id
             {
                 get { return ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "ID")).Value; }
                 set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "ID")).Value = value; }
             }
-            internal string Name { get; set; }
-            internal string Model { get; set; }
-            
+            public string Name { get; set; }
+            public string Model { get; set; }
 
-            internal UEGenericStructProperty GvasBaseProperty;
+
+            public UEGenericStructProperty GvasBaseProperty;
 
             internal Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>")
             {

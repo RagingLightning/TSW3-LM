@@ -7,12 +7,17 @@ namespace TSW3LM
     /// </summary>
     public partial class LiveryInfoCollector : Window
     {
-        internal string Name { get { return txtName.Text; } }
-        internal string Model { get { return txtModel.Text; } }
+        internal string LiveryName { get { return txtName.Text; } }
+        internal string LiveryModel { get { return txtModel.Text; } }
 
-        public LiveryInfoCollector(string cause)
+        public LiveryInfoCollector()
         {
             InitializeComponent();
+        }
+
+        internal void Prepare(string cause)
+        {
+            ShowActivated = true;
             lblCause.Content = cause;
         }
 
@@ -24,7 +29,7 @@ namespace TSW3LM
 
         private void Confirm(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
+            DialogResult = true;
             Close();
         }
 

@@ -93,7 +93,7 @@ namespace TSW3LM
 
         internal static void Add(Livery livery)
         {
-            int index = Enumerable.Range(0, Liveries.Count).First(i => !Liveries.ContainsKey(i));
+            int index = Enumerable.Range(0, Liveries.Count+1).First(i => !Liveries.ContainsKey(i));
             Liveries[index] = livery;
         }
 

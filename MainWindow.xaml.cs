@@ -37,13 +37,13 @@ namespace TSW3LM
             Config.Init("TSW3LM.json");
             GameLiveryInfo.Init("LiveryInfo.json");
 
-            Log.AddLogFile("TSW2LM.log", Log.LogLevel.INFO);
+            Log.AddLogFile("TSW3LM.log", Log.LogLevel.INFO);
             if (Environment.GetCommandLineArgs().Contains("-debug"))
             {
-                Log.AddLogFile("TSW2LM_debug.log", Log.LogLevel.DEBUG);
+                Log.AddLogFile("TSW3LM_debug.log", Log.LogLevel.DEBUG);
                 Log.ConsoleLevel = Log.LogLevel.DEBUG;
             }
-            Log.AddLogMessage($"Command line: {Environment.GetCommandLineArgs()}", "MW:<init>", Log.LogLevel.DEBUG);
+            Log.AddLogMessage($"Command line: {Environment.CommandLine}", "MW:<init>", Log.LogLevel.DEBUG);
 
             string[] args = Environment.GetCommandLineArgs();
             Config.SkipAutosave = true;
@@ -150,6 +150,10 @@ namespace TSW3LM
 
             UpdateLibraryGui();
 
+            if (Config.LibraryPath != "" && Config.GamePath != "")
+                ((Data)DataContext).Useable = true;
+
+            InfoCollectorThread.SetApartmentState(ApartmentState.STA);
             InfoCollectorThread.Start();
 
         }
@@ -159,7 +163,7 @@ namespace TSW3LM
             GameLiveryInfo.Running = false;
             GameLiveryInfo.TswMonitor.Kill();
         }
-        private void PrintHelp()
+        internal void PrintHelp()
         {
             Console.WriteLine();
             Console.WriteLine("╔════════════════════════════════════════════════════════════════════╗");
@@ -191,11 +195,11 @@ namespace TSW3LM
             Application.Current.Shutdown();
         }
 
-        private void UpdateGameGui()
+        internal void UpdateGameGui()
         {
             Log.AddLogMessage("Updating game liveries in GUI...", "MW:UpdateGameGui");
             lstGameLiveries.Items.Clear();
-            for (int i = 1; i <= Config.MaxGameLiveries; i++)
+            for (int i = 0; i < Config.MaxGameLiveries; i++)
             {
                 string Text;
                 if (Game.Liveries.Count <= i)
@@ -203,7 +207,7 @@ namespace TSW3LM
                 else
                 {
                     string Id = Game.Liveries[i].ID;
-                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
+                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id, null);
                     Text = $"({i}) {Info.Name} for {Info.Model}";
                 }
                 lstGameLiveries.Items.Add(Text);
@@ -213,7 +217,7 @@ namespace TSW3LM
             Log.AddLogMessage("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }
 
-        private void UpdateLibraryGui()
+        internal void UpdateLibraryGui()
         {
             Log.AddLogMessage("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
             lstLibraryLiveries.Items.Clear();
@@ -245,7 +249,7 @@ namespace TSW3LM
         private void ExportLivery(Game.Livery gl)
         {
             Log.AddLogMessage($"Exporting livery {gl.ID}", "MW:ExportLivery");
-            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID);
+            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID, "You are exporting a livery");
             string fileName = Utils.SanitizeFileName($"{Info.Name} for {Info.Model}.tsw3");
             if (Info.Name == "<unnamed>" && Info.Model == "<unknown>")
             {
@@ -354,11 +358,6 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        private void lstLibrary_Change(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
         private void btnLibDir_Click(object sender, RoutedEventArgs e)
         {
             lblMessage.Content = "";
@@ -376,11 +375,6 @@ namespace TSW3LM
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
                 ((Data)DataContext).Useable = true;
-        }
-
-        private void lstGame_Change(object sender, SelectionChangedEventArgs e)
-        {
-
         }
 
         private void btnGameDir_Click(object sender, RoutedEventArgs e)
@@ -452,6 +446,7 @@ namespace TSW3LM
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
+            GameLiveryInfo.BypassCollector = true;
             Log.AddLogMessage("Saving local game liveries to disk...", "MW:SaveClick");
             lblMessage.Content = "";
             Game.Save();

@@ -71,9 +71,9 @@ namespace TSW3LM
 
         private static void Save()
         {
-            Log.AddLogMessage("Saving Config...", "Config::Save", Log.LogLevel.DEBUG);
-            File.WriteAllText(Path, JsonConvert.SerializeObject(entries));
-            Log.AddLogMessage("Config saved", "Config::Save", Log.LogLevel.DEBUG);
+            Log.AddLogMessage("Saving Config...", "Config:Save", Log.LogLevel.DEBUG);
+            File.WriteAllText(Path, JsonConvert.SerializeObject(entries, new JsonSerializerSettings { Formatting = Formatting.Indented }));
+            Log.AddLogMessage("Config saved", "Config:Save", Log.LogLevel.DEBUG);
         }
 
         internal static void ApplyDefaults()
@@ -84,14 +84,13 @@ namespace TSW3LM
 
         private class Entries
         {
-            [JsonIgnore]
-            internal bool SkipAutosave = false;
-            internal string GamePath = "";
-            internal string LibraryPath = "";
-            internal bool NoUpdate = false;
-            internal bool DevUpdates = false;
-            internal int MaxGameLiveries = 300;
-            internal bool CollectLiveryData = true;
+            public bool SkipAutosave = false;
+            public string GamePath = "";
+            public string LibraryPath = "";
+            public bool NoUpdate = false;
+            public bool DevUpdates = false;
+            public int MaxGameLiveries = 300;
+            public bool CollectLiveryData = true;
 
             internal void ApplyDefaults()
             {

@@ -126,6 +126,8 @@ namespace TSW3LM
 
     class Log
     {
+        private static readonly object locker = new object();
+
         private static Dictionary<string, LogLevel> LogPaths = new Dictionary<string, LogLevel>();
 
         /// <summary>The highest LogLevel shown on the Console</summary>
@@ -161,16 +163,19 @@ namespace TSW3LM
         /// <param name="level">The LogLevel of this message, it will only be logged to each file that has a LogLevel at or above that of the message</param>
         public static void AddLogMessage(string message, string? stack = "-", LogLevel? level = LogLevel.INFO)
         {
-            string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
-            string LogLine = $"[{level.ToString()}] {Timestamp} {stack} | {message}\n";
-            if (ConsoleLevel >= level)
+            lock (locker)
             {
-                Trace.Write(LogLine);
-                Console.Write(LogLine);
-            }
-            foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(pair => pair.Value >= level))
-            {
-                File.AppendAllText(p.Key, LogLine);
+                string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
+                string LogLine = $"[{level.ToString()}] {Timestamp} {stack} | {message}\n";
+                if (ConsoleLevel >= level)
+                {
+                    Trace.Write(LogLine);
+                    Console.Write(LogLine);
+                }
+                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(pair => pair.Value >= level))
+                {
+                    File.AppendAllText(p.Key, LogLine);
+                }
             }
         }
 
