@@ -1,4 +1,5 @@
-﻿using GvasFormat.Serialization;
+﻿using GvasConverter;
+using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using Microsoft.Win32;
 using Newtonsoft.Json;
@@ -26,7 +27,7 @@ namespace TSW3LM
             {
                 try
                 {
-                    Livery livery = JsonConvert.DeserializeObject<Livery>(File.ReadAllText(file.FullName));
+                    Livery livery = JsonConvert.DeserializeObject<Livery>(File.ReadAllText(file.FullName), new LibLivJsonConverter());
                     livery.FileName = file.Name;
                     while (Liveries.ContainsKey(i)) i++;
                     Liveries.Add(i, livery);
@@ -102,7 +103,7 @@ namespace TSW3LM
 
             public UEGenericStructProperty GvasBaseProperty;
 
-            internal Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>")
+            public Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>")
             {
                 FileName = fileName;
                 GvasBaseProperty = property;

@@ -162,6 +162,7 @@ namespace TSW3LM
         {
             GameLiveryInfo.Running = false;
             GameLiveryInfo.TswMonitor.Kill();
+            Environment.Exit(0);
         }
         internal void PrintHelp()
         {
@@ -201,18 +202,16 @@ namespace TSW3LM
             lstGameLiveries.Items.Clear();
             for (int i = 0; i < Config.MaxGameLiveries; i++)
             {
-                string Text;
                 if (Game.Liveries.Count <= i)
-                    Text = $"({i}) <empty>";
+                    lstGameLiveries.Items.Add($"({i}) <empty>");
                 else
                 {
                     string Id = Game.Liveries[i].ID;
                     GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id, null);
-                    Text = $"({i}) {Info.Name} for {Info.Model}";
+                    string Text = $"({i}) {Info.Name} for {Info.Model}";
+                    lstGameLiveries.Items.Add(Text);
+                    Log.AddLogMessage($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
                 }
-                lstGameLiveries.Items.Add(Text);
-
-                Log.AddLogMessage($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
             }
             Log.AddLogMessage("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }

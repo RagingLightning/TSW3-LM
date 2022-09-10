@@ -1,12 +1,13 @@
 ﻿#nullable enable
+using GvasConverter;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Windows.Controls;
 
 namespace TSW3LM
 {
@@ -187,5 +188,28 @@ namespace TSW3LM
             DEBUG = 4
         }
 
+    }
+
+    class LibLivJsonConverter : GvasJsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return typeof(Library.Livery).IsAssignableFrom(objectType);
+        }
+
+        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        {
+            Library.Livery livery = existingValue == null ? new Library.Livery(null, null) : (Library.Livery)existingValue;
+            JObject jo = JObject.Load(reader);
+            livery.Name = jo["Name"].ToString();
+            livery.Model = jo["Model"].ToString();
+            livery.GvasBaseProperty = (GvasFormat.Serialization.UETypes.UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
+            return livery;
+        }
+
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
