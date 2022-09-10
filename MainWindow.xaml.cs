@@ -242,7 +242,7 @@ namespace TSW3LM
             }
 
             Game.Add(new Game.Livery(ll.GvasBaseProperty));
-            Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id}", "MW:ImportLivery", Log.LogLevel.DEBUG);
+            Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
         }
 
         private void ExportLivery(Game.Livery gl)
@@ -265,7 +265,7 @@ namespace TSW3LM
             Library.Add(ll);
             Library.Save(ll);
 
-            Log.AddLogMessage($"Livery successfully exported (ID: {ll.Id}", "MW:ImportLivery", Log.LogLevel.DEBUG);
+            Log.AddLogMessage($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
         }
 
         private string DetermineWindowsStoreSaveFile()
@@ -409,6 +409,7 @@ namespace TSW3LM
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
                 ((Data)DataContext).Useable = true;
+
         }
 
         private void btnBackup_Click(object sender, RoutedEventArgs e)

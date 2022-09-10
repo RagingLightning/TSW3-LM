@@ -88,7 +88,9 @@ namespace TSW3LM
             string backupName = DateTime.Now.ToString("yyMMdd-HHmmss") + ".bak3";
             File.WriteAllBytes($"{Config.LibraryPath}\\backup\\{backupName}", Contents);
 
-            UESerializer.Write(File.Open(Config.GamePath, FileMode.Create, FileAccess.Write), GameData);
+            FileStream stream = File.Open(Config.GamePath, FileMode.Create, FileAccess.Write);
+            UESerializer.Write(stream, GameData);
+            stream.Close();
         }
 
         internal static void Add(Livery livery)

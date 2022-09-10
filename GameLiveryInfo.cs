@@ -90,18 +90,24 @@ namespace TSW3LM
                         liveryId = Utils.GenerateHex(length);
                     } while (Data.ContainsKey(liveryId));
                     Log.AddLogMessage($"New Livery Id: {liveryId}");
+
+                    Data.Add(liveryId, new Info(name, model));
+
+                    Save();
+                    return liveryId;
                 }
-                Data.Add(liveryId, new Info(name, model));
+                Data[liveryId].Name = name;
+                Data[liveryId].Model = model;
 
                 Save();
                 return liveryId;
             }
-
-            Data[liveryId].Name = name;
-            Data[liveryId].Model = model;
+            Data.Add(liveryId, new Info(name, model));
 
             Save();
             return liveryId;
+
+            
         }
 
         internal static void Collector()
