@@ -156,7 +156,8 @@ namespace TSW3LM
         
         private void Close(object sender, CancelEventArgs e)
         {
-            InfoCollectorThread.Abort();
+            GameLiveryInfo.Running = false;
+            GameLiveryInfo.TswMonitor.Kill();
         }
         private void PrintHelp()
         {
