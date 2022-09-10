@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Windows;
 using System.Windows.Navigation;
 
 namespace TSW3LM
@@ -15,7 +16,6 @@ namespace TSW3LM
         internal static bool Running = true;
 
         private static string Path;
-        private static LiveryInfoCollector InfoCollector;
 
         internal static bool BypassCollector = false;
 
@@ -24,7 +24,6 @@ namespace TSW3LM
             Log.AddLogMessage("LiveryInfo initializing...", "LI:Init");
             Log.AddLogMessage($"|> Path: {path}", "LI:Init", Log.LogLevel.DEBUG);
             Path = path;
-            InfoCollector = new LiveryInfoCollector();
 
             if (File.Exists(Path))
             {
@@ -41,12 +40,34 @@ namespace TSW3LM
         {
             Log.AddLogMessage("Loading Livery info...", "LI:Load");
             Data = JsonConvert.DeserializeObject<Dictionary<string, Info>>(File.ReadAllText(Path));
+
+            List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
+            foreach (string liveryId in Data.Keys)
+            {
+                if (!gameIds.Contains(liveryId))
+                {
+                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Load", Log.LogLevel.DEBUG);
+                    Data.Remove(liveryId);
+                }
+            }
+
             Log.AddLogMessage("Livery info loaded.", "LI:Load", Log.LogLevel.DEBUG);
         }
 
-        internal static void Save()
+        internal static void Save(string? newLivery = null)
         {
             Log.AddLogMessage("Saving Livery info...", "LI:Save");
+
+            List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
+            foreach (string liveryId in Data.Keys)
+            {
+                if (!gameIds.Contains(liveryId) && liveryId != newLivery)
+                {
+                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Save", Log.LogLevel.DEBUG);
+                    Data.Remove(liveryId);
+                }
+            }
+
             try
             {
                 File.WriteAllText(Path, JsonConvert.SerializeObject(Data));
@@ -59,18 +80,16 @@ namespace TSW3LM
             Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
         }
 
-        internal static Info Get(string liveryId, string? cause)
+        internal static Info Get(string liveryId, bool request)
         {
             if (Data.ContainsKey(liveryId))
                 return Data[liveryId];
-            if (cause == null)
-                return new Info();
-            InfoCollector.Prepare(cause);
-            if (InfoCollector.ShowDialog() == true)
+            if (request)
             {
-                Info info = new Info(InfoCollector.LiveryName, InfoCollector.LiveryModel);
-                Data.Add(liveryId, info);
-                return info;
+                LiveryInfoWindow.INSTANCE.LiveryId = liveryId;
+                LiveryInfoWindow.INSTANCE.LiveryName = "<unnamed>";
+                LiveryInfoWindow.INSTANCE.LiveryModel = "<unknown>";
+                LiveryInfoWindow.INSTANCE.Show();
             }
             return new Info();
         }
@@ -93,26 +112,24 @@ namespace TSW3LM
 
                     Data.Add(liveryId, new Info(name, model));
 
-                    Save();
+                    Save(liveryId);
                     return liveryId;
                 }
                 Data[liveryId].Name = name;
                 Data[liveryId].Model = model;
 
-                Save();
+                Save(liveryId);
                 return liveryId;
             }
             Data.Add(liveryId, new Info(name, model));
 
-            Save();
+            Save(liveryId);
             return liveryId;
-
-            
         }
 
         internal static void Collector()
         {
-            LiveryInfoCollector Collector = new LiveryInfoCollector();
+            LiveryInfoWindow Collector = new LiveryInfoWindow();
             while (true)
             {
                 TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 0.5");
@@ -126,7 +143,7 @@ namespace TSW3LM
                 }
                 Game.Load();
 
-                List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
+                /*List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
 
                 foreach (string id in gameIds.Concat(Data.Keys))
                 {
@@ -143,7 +160,7 @@ namespace TSW3LM
                         Data.Remove(id);
                 }
                 
-                Save();
+                Save();*/
             }
         }
 

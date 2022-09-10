@@ -55,6 +55,12 @@ namespace TSW3LM
 
             try
             {
+                if (!GameData.Properties.Any(p => p is UEArrayProperty))
+                {
+                    Log.AddLogMessage("No livery exists in the game...", "G:Load", Log.LogLevel.WARNING);
+                    GvasReskinArray = new UEArrayProperty();
+                    return null;
+                }
                 GvasReskinArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty);
                 int i = 0;
                 foreach (UEProperty LiveryBase in GvasReskinArray.Items)
@@ -64,7 +70,7 @@ namespace TSW3LM
                 }
             } catch (Exception e)
             {
-                Log.AddLogMessage($"Error loading Livery: {e.Message}", "G:Load", Log.LogLevel.WARNING);
+                Log.AddLogMessage($"Error loading Livery: {e.Message}", "G:Load", Log.LogLevel.ERROR);
                 return $"Exception while loading liveries - Make sure:\n -  you selected the appropriate folder\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or creare an issue on github";
             }
 

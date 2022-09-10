@@ -19,6 +19,8 @@ namespace TSW3LM
     /// </summary>
     public partial class MainWindow : Window
     {
+        internal static MainWindow INSTANCE;
+
         private const string VERSION = "0.0.1";
 
         private Thread InfoCollectorThread = new Thread(GameLiveryInfo.Collector);
@@ -31,11 +33,11 @@ namespace TSW3LM
 
         public MainWindow()
         {
+            INSTANCE = this;
 
             AttachConsole(-1);
 
             Config.Init("TSW3LM.json");
-            GameLiveryInfo.Init("LiveryInfo.json");
 
             Log.AddLogFile("TSW3LM.log", Log.LogLevel.INFO);
             if (Environment.GetCommandLineArgs().Contains("-debug"))
@@ -140,6 +142,9 @@ namespace TSW3LM
                     lblMessage.Content = $"ERROR WHILE LOADING GAME LIVERIES, please ensure you:\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or create an issue on github";
                 }
             }
+
+            GameLiveryInfo.Init("LiveryInfo.json");
+
             UpdateGameGui();
 
             if (Config.LibraryPath != "")
@@ -153,11 +158,13 @@ namespace TSW3LM
             if (Config.LibraryPath != "" && Config.GamePath != "")
                 ((Data)DataContext).Useable = true;
 
+            LiveryInfoWindow.INSTANCE = new LiveryInfoWindow();
+
             InfoCollectorThread.SetApartmentState(ApartmentState.STA);
             InfoCollectorThread.Start();
 
         }
-        
+
         private void Close(object sender, CancelEventArgs e)
         {
             GameLiveryInfo.Running = false;
@@ -207,7 +214,7 @@ namespace TSW3LM
                 else
                 {
                     string Id = Game.Liveries[i].ID;
-                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id, null);
+                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id, false);
                     string Text = $"({i}) {Info.Name} for {Info.Model}";
                     lstGameLiveries.Items.Add(Text);
                     Log.AddLogMessage($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
@@ -248,7 +255,7 @@ namespace TSW3LM
         private void ExportLivery(Game.Livery gl)
         {
             Log.AddLogMessage($"Exporting livery {gl.ID}", "MW:ExportLivery");
-            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID, "You are exporting a livery");
+            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID, true); //TODO: Make Data entry actually work by waiting for user input
             string fileName = Utils.SanitizeFileName($"{Info.Name} for {Info.Model}.tsw3");
             if (Info.Name == "<unnamed>" && Info.Model == "<unknown>")
             {
@@ -266,6 +273,23 @@ namespace TSW3LM
             Library.Save(ll);
 
             Log.AddLogMessage($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
+        }
+
+        private void UpdateLiveryInfoWindow(Game.Livery livery, bool show)
+        {
+            if (livery == null)
+            {
+                LiveryInfoWindow.INSTANCE.LiveryId = "<empty>";
+                LiveryInfoWindow.INSTANCE.LiveryName = "";
+                LiveryInfoWindow.INSTANCE.LiveryModel = "";
+                if (show) LiveryInfoWindow.INSTANCE.Show();
+                return;
+            }
+            LiveryInfoWindow.INSTANCE.LiveryId = livery.ID;
+            GameLiveryInfo.Info Info = GameLiveryInfo.Get(livery.ID, false);
+            LiveryInfoWindow.INSTANCE.LiveryName = Info.Name;
+            LiveryInfoWindow.INSTANCE.LiveryModel = Info.Model;
+            if(show) LiveryInfoWindow.INSTANCE.Show();
         }
 
         private string DetermineWindowsStoreSaveFile()
@@ -352,9 +376,10 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        private void btnJImport_Click(object sender, RoutedEventArgs e)     //Reuse for TSW2 import maybe?
+        private void btnInfo_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            if (Game.Liveries.ContainsKey(lstGameLiveries.SelectedIndex))
+                UpdateLiveryInfoWindow(Game.Liveries[lstGameLiveries.SelectedIndex], true);
         }
 
         private void btnLibDir_Click(object sender, RoutedEventArgs e)
@@ -475,6 +500,14 @@ namespace TSW3LM
             }
             Game.Liveries.Remove(lstGameLiveries.SelectedIndex);
             UpdateGameGui();
+        }
+
+        private void lstGameLiveries_Change(object sender, SelectionChangedEventArgs e)
+        {
+            if (Game.Liveries.ContainsKey(lstGameLiveries.SelectedIndex))
+                UpdateLiveryInfoWindow(Game.Liveries[lstGameLiveries.SelectedIndex], false);
+            else
+                UpdateLiveryInfoWindow(null, false);
         }
     }
 
