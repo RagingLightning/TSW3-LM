@@ -23,7 +23,8 @@ namespace TSW3LM
                 entries = JsonConvert.DeserializeObject<Entries>(File.ReadAllText(path));
                 Log.AddLogMessage("Config loaded", "Config:<init>", Log.LogLevel.DEBUG);
             }
-            else { 
+            else
+            {
                 Log.AddLogMessage("No Config found, initializing empty config", "Config:<init>", Log.LogLevel.DEBUG);
                 entries = new Entries();
             }
@@ -31,7 +32,7 @@ namespace TSW3LM
 
         public static bool SkipAutosave
         {
-            set { entries.SkipAutosave = value; Save(); }
+            set { entries.SkipAutosave = value; if (!value) Save(); }
         }
 
         public static string GamePath
