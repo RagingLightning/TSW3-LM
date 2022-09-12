@@ -41,32 +41,12 @@ namespace TSW3LM
             Log.AddLogMessage("Loading Livery info...", "LI:Load");
             Data = JsonConvert.DeserializeObject<Dictionary<string, Info>>(File.ReadAllText(Path));
 
-            List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
-            foreach (string liveryId in Data.Keys)
-            {
-                if (!gameIds.Contains(liveryId))
-                {
-                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Load", Log.LogLevel.DEBUG);
-                    Data.Remove(liveryId);
-                }
-            }
-
             Log.AddLogMessage("Livery info loaded.", "LI:Load", Log.LogLevel.DEBUG);
         }
 
         internal static void Save(string? newLivery = null)
         {
             Log.AddLogMessage("Saving Livery info...", "LI:Save");
-
-            List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
-            foreach (string liveryId in Data.Keys)
-            {
-                if (!gameIds.Contains(liveryId) && liveryId != newLivery)
-                {
-                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Save", Log.LogLevel.DEBUG);
-                    Data.Remove(liveryId);
-                }
-            }
 
             try
             {
@@ -78,6 +58,19 @@ namespace TSW3LM
                 return;
             }
             Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
+        }
+
+        internal static void Cleanup()
+        {
+            List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
+            foreach (string liveryId in Data.Keys)
+            {
+                if (!gameIds.Contains(liveryId))
+                {
+                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Save", Log.LogLevel.DEBUG);
+                    Data.Remove(liveryId);
+                }
+            }
         }
 
         internal static Info? Get(string liveryId, ThreadStart? callback = null)

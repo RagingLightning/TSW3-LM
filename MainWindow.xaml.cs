@@ -120,7 +120,6 @@ namespace TSW3LM
             }
 
             InitializeComponent();
-            DataContext = new Data();
 
             if (Config.GamePath != "")
             {
@@ -168,8 +167,8 @@ namespace TSW3LM
 
         private void Close(object sender, CancelEventArgs e)
         {
-            GameLiveryInfo.Running = false;
-            GameLiveryInfo.TswMonitor.Kill();
+            //GameLiveryInfo.Running = false;
+            //GameLiveryInfo.TswMonitor.Kill();
             Environment.Exit(0);
         }
         internal void PrintHelp()
@@ -314,7 +313,7 @@ namespace TSW3LM
         private void ShowStatusText(string text, int duration = 2500)
         {
             lblMessage.Content = text;
-            new Timer((state) => lblMessage.Content = "", null, duration, Timeout.Infinite);
+            new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
         }
 
         private string DetermineWindowsStoreSaveFile()
