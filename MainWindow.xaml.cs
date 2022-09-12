@@ -10,7 +10,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
-using System.Runtime.CompilerServices;
 
 namespace TSW3LM
 {
@@ -23,7 +22,7 @@ namespace TSW3LM
 
         private const string VERSION = "0.0.1";
 
-        private Thread InfoCollectorThread = new Thread(GameLiveryInfo.Collector);
+        private Thread InfoCollectorThread = new Thread(GameLiveryInfo.AutoRefresh);
 
         [DllImport("Kernel32.dll")]
         public static extern bool AttachConsole(int processId);
@@ -160,8 +159,8 @@ namespace TSW3LM
 
             LiveryInfoWindow.INSTANCE = new LiveryInfoWindow();
 
-            InfoCollectorThread.SetApartmentState(ApartmentState.STA);
-            InfoCollectorThread.Start();
+            //InfoCollectorThread.SetApartmentState(ApartmentState.STA);
+            //InfoCollectorThread.Start();
 
         }
 
@@ -214,7 +213,7 @@ namespace TSW3LM
                 else
                 {
                     string Id = Game.Liveries[i].ID;
-                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id, false);
+                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
                     string Text = $"({i}) {Info.Name} for {Info.Model}";
                     lstGameLiveries.Items.Add(Text);
                     Log.AddLogMessage($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
@@ -252,23 +251,36 @@ namespace TSW3LM
             Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
         }
 
-        private void ExportLivery(Game.Livery gl)
+        private void PrepareLiveryExport(Game.Livery gl)
+        {
+            Log.AddLogMessage($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
+            GameLiveryInfo.Get(gl.ID, () => ExportLivery(gl));
+        }
+
+        internal void ExportLivery(Game.Livery gl)
         {
             Log.AddLogMessage($"Exporting livery {gl.ID}", "MW:ExportLivery");
-            GameLiveryInfo.Info Info = GameLiveryInfo.Get(gl.ID, true); //TODO: Make Data entry actually work by waiting for user input
-            string fileName = Utils.SanitizeFileName($"{Info.Name} for {Info.Model}.tsw3");
-            if (Info.Name == "<unnamed>" && Info.Model == "<unknown>")
+            GameLiveryInfo.Info info = GameLiveryInfo.Get(gl.ID);
+            string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.tsw3");
+            if (info.Name == "<unnamed>" && info.Model == "<unknown>")
             {
                 Log.AddLogMessage($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
-                SaveFileDialog Dialog = new SaveFileDialog();
-                Dialog.InitialDirectory = Config.LibraryPath;
-                Dialog.Filter = "TSW3 Livery File (*.tsw3)|*.tsw3";
-                Dialog.DefaultExt = "*.tsw3";
+                SaveFileDialog Dialog = new SaveFileDialog
+                {
+                    InitialDirectory = Config.LibraryPath,
+                    Filter = "TSW3 Livery File (*.tsw3)|*.tsw3",
+                    DefaultExt = "*.tsw3"
+                };
                 if (Dialog.ShowDialog() == true)
                     fileName = Utils.SanitizeFileName(Dialog.SafeFileName);
+                else
+                {
+                    Log.AddLogMessage("Livery export cancelled by user", "MW:ExportLivery", Log.LogLevel.WARNING);
+                    return;
+                }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, Info.Name, Info.Model);
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model);
             Library.Add(ll);
             Library.Save(ll);
 
@@ -286,7 +298,7 @@ namespace TSW3LM
                 return;
             }
             LiveryInfoWindow.INSTANCE.LiveryId = livery.ID;
-            GameLiveryInfo.Info Info = GameLiveryInfo.Get(livery.ID, false);
+            GameLiveryInfo.Info Info = GameLiveryInfo.Get(livery.ID);
             LiveryInfoWindow.INSTANCE.LiveryName = Info.Name;
             LiveryInfoWindow.INSTANCE.LiveryModel = Info.Model;
             if(show) LiveryInfoWindow.INSTANCE.Show();
@@ -354,7 +366,7 @@ namespace TSW3LM
             }
 
             lblMessage.Content = "";
-            ExportLivery(Game.Liveries[lstGameLiveries.SelectedIndex]);
+            PrepareLiveryExport(Game.Liveries[lstGameLiveries.SelectedIndex]);
             UpdateLibraryGui();
         }
 
@@ -471,7 +483,7 @@ namespace TSW3LM
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
-            GameLiveryInfo.BypassCollector = true;
+            GameLiveryInfo.NoAutoRefresh = true;
             Log.AddLogMessage("Saving local game liveries to disk...", "MW:SaveClick");
             lblMessage.Content = "";
             Game.Save();

@@ -17,7 +17,7 @@ namespace TSW3LM
 
         private static string Path;
 
-        internal static bool BypassCollector = false;
+        internal static bool NoAutoRefresh = false;
 
         internal static void Init(string path)
         {
@@ -80,17 +80,24 @@ namespace TSW3LM
             Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
         }
 
-        internal static Info Get(string liveryId, bool request)
+        internal static Info? Get(string liveryId, ThreadStart? callback = null)
         {
-            if (Data.ContainsKey(liveryId))
-                return Data[liveryId];
-            if (request)
+            if (callback != null)
             {
+                if (Data.ContainsKey(liveryId))
+                {
+                    callback.Invoke();
+                    return null;
+                }
                 LiveryInfoWindow.INSTANCE.LiveryId = liveryId;
                 LiveryInfoWindow.INSTANCE.LiveryName = "<unnamed>";
                 LiveryInfoWindow.INSTANCE.LiveryModel = "<unknown>";
+                LiveryInfoWindow.INSTANCE.Callback = callback;
                 LiveryInfoWindow.INSTANCE.Show();
+                return null;
             }
+            if (Data.ContainsKey(liveryId))
+                return Data[liveryId];
             return new Info();
         }
 
@@ -127,18 +134,16 @@ namespace TSW3LM
             return liveryId;
         }
 
-        internal static void Collector()
+        internal static void AutoRefresh()
         {
-            LiveryInfoWindow Collector = new LiveryInfoWindow();
             while (true)
             {
-                TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 0.5");
+                TswMonitor = Process.Start("TSW3Mon.exe", $"\"{Config.GamePath}\" 500");
                 TswMonitor.WaitForExit();
-                if (!Running) return;
                 Thread.Sleep(15000);
-                if (BypassCollector)
+                if (NoAutoRefresh)
                 {
-                    BypassCollector = false;
+                    NoAutoRefresh = false;
                     continue;
                 }
                 Game.Load();

@@ -10,6 +10,8 @@ namespace TSW3LM
     {
         internal static LiveryInfoWindow INSTANCE;
 
+        internal ThreadStart? Callback = null;
+
         internal string LiveryName {
             get { return txtName.Text; }
             set { txtName.Text = value; txtName.InvalidateVisual(); }
@@ -31,6 +33,12 @@ namespace TSW3LM
         private void Cancel(object sender, RoutedEventArgs e)
         {
             Visibility = Visibility.Collapsed;
+
+            if (Callback != null)
+            {
+                Callback.Invoke();
+                Callback = null;
+            }
         }
 
         private void Confirm(object sender, RoutedEventArgs e)
@@ -41,6 +49,12 @@ namespace TSW3LM
             {
                 GameLiveryInfo.SetInfo(LiveryId, LiveryName, LiveryModel, true);
                 MainWindow.INSTANCE.UpdateGameGui();
+            }
+
+            if (Callback != null)
+            {
+                Callback.Invoke();
+                Callback = null;
             }
         }
     }
