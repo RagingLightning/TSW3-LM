@@ -168,6 +168,7 @@ namespace TSW3LM
         {
             //GameLiveryInfo.Running = false;
             //GameLiveryInfo.TswMonitor.Kill();
+            FreeConsole();
             Environment.Exit(0);
         }
         internal void PrintHelp()

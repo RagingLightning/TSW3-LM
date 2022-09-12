@@ -162,7 +162,7 @@ namespace TSW3LM
         /// <param name="message">The log message.</param>
         /// <param name="stack">A simple string representation of the call stack</param>
         /// <param name="level">The LogLevel of this message, it will only be logged to each file that has a LogLevel at or above that of the message</param>
-        public static void AddLogMessage(string message, string? stack = "-", LogLevel? level = LogLevel.INFO)
+        public static void AddLogMessage(string message, string stack = "-", LogLevel level = LogLevel.INFO)
         {
             lock (locker)
             {
@@ -178,6 +178,11 @@ namespace TSW3LM
                     File.AppendAllText(p.Key, LogLine);
                 }
             }
+        }
+
+        public static void LogPrintException(Exception e, string stack = "-")
+        {
+
         }
 
         public enum LogLevel
