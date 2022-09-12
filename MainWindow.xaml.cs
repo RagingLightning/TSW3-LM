@@ -35,7 +35,6 @@ namespace TSW3LM
         public MainWindow()
         {
             INSTANCE = this;
-
             AttachConsole(-1);
 
             Config.Init("TSW3LM.json");
