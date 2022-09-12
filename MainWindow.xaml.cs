@@ -503,7 +503,10 @@ namespace TSW3LM
                 ShowStatusText("Game liveries successfully saved. Restart the game to use the liveries");
             }
             catch (Exception ex)
-            { Log.AddLogMessage(ex.Message, "MW:Save_Click", Log.LogLevel.ERROR); }
+            {
+                Log.AddLogMessage(ex.Message, "MW:Save_Click", Log.LogLevel.ERROR);
+                ShowStatusText($"ERROR: Unable to save liveries: {ex.Message}");
+            }
 
             Game.Load();
             UpdateGameGui();
