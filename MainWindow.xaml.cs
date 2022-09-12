@@ -285,6 +285,8 @@ namespace TSW3LM
             Library.Save(ll);
 
             Log.AddLogMessage($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
+
+            UpdateLibraryGui();
         }
 
         private void UpdateLiveryInfoWindow(Game.Livery livery, bool show)
