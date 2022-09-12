@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="LiveryInfoCollector" Height="450" Width="450" HorizontalAlignment="Center" VerticalAlignment="Center">
+        Title="LiveryInfoCollector" Height="450" Width="650" HorizontalAlignment="Center" VerticalAlignment="Center">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -14,9 +14,9 @@
         <Label Content="ID" HorizontalAlignment="Left" Margin="15,100,0,0" VerticalAlignment="Top" FontSize="20"/>
         <Label Content="Name" HorizontalAlignment="Left" Margin="15,160,0,0" VerticalAlignment="Top" FontSize="20"/>
         <Label Content="Model" HorizontalAlignment="Left" Margin="15,220,0,0" VerticalAlignment="Top" FontSize="20"/>
-        <TextBox x:Name="txtId" HorizontalAlignment="Left" Margin="120,100,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="320" FontSize="20" IsEnabled="False"/>
-        <TextBox x:Name="txtName" HorizontalAlignment="Left" Margin="120,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="320" FontSize="20"/>
-        <TextBox x:Name="txtModel" HorizontalAlignment="Left" Margin="120,220,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="320" FontSize="20"/>
+        <TextBox x:Name="txtId" HorizontalAlignment="Left" Margin="120,100,0,0" VerticalAlignment="Top" Width="500" FontSize="20" IsEnabled="False"/>
+        <TextBox x:Name="txtName" HorizontalAlignment="Left" Margin="120,160,0,0" VerticalAlignment="Top" Width="500" FontSize="20"/>
+        <TextBox x:Name="txtModel" HorizontalAlignment="Left" Margin="120,220,0,0" VerticalAlignment="Top" Width="500" FontSize="20"/>
         <Button Content="Save" HorizontalAlignment="Right" Margin="0,0,20,20" VerticalAlignment="Bottom" FontSize="36" IsDefault="True" Width="241" Click="Confirm"/>
         <Button Content="Close" HorizontalAlignment="Left" Margin="20,0,20,20" VerticalAlignment="Bottom" FontSize="36" IsCancel="True" Width="133" Height="51" Click="Cancel"/>
     </Grid>
