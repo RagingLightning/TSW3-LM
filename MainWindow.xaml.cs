@@ -10,6 +10,8 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
+using System.Reflection.Metadata;
+using System.Linq.Expressions;
 
 namespace TSW3LM
 {
@@ -208,7 +210,7 @@ namespace TSW3LM
             lstGameLiveries.Items.Clear();
             for (int i = 0; i < Config.MaxGameLiveries; i++)
             {
-                if (Game.Liveries.Count <= i)
+                if (!Game.Liveries.ContainsKey(i))
                     lstGameLiveries.Items.Add($"({i}) <empty>");
                 else
                 {
@@ -249,6 +251,7 @@ namespace TSW3LM
 
             Game.Add(new Game.Livery(ll.GvasBaseProperty));
             Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
+            ShowStatusText("Livery successfully imported");
         }
 
         private void PrepareLiveryExport(Game.Livery gl)
@@ -276,6 +279,7 @@ namespace TSW3LM
                 else
                 {
                     Log.AddLogMessage("Livery export cancelled by user", "MW:ExportLivery", Log.LogLevel.WARNING);
+                    ShowStatusText("WARN: Livery export cancelled!");
                     return;
                 }
             }
@@ -285,6 +289,7 @@ namespace TSW3LM
             Library.Save(ll);
 
             Log.AddLogMessage($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
+            ShowStatusText("Livery successfully exported");
 
             UpdateLibraryGui();
         }
@@ -303,7 +308,13 @@ namespace TSW3LM
             GameLiveryInfo.Info Info = GameLiveryInfo.Get(livery.ID);
             LiveryInfoWindow.INSTANCE.LiveryName = Info.Name;
             LiveryInfoWindow.INSTANCE.LiveryModel = Info.Model;
-            if(show) LiveryInfoWindow.INSTANCE.Show();
+            if (show) LiveryInfoWindow.INSTANCE.Show();
+        }
+
+        private void ShowStatusText(string text, int duration = 2500)
+        {
+            lblMessage.Content = text;
+            new Timer((state) => lblMessage.Content = "", null, duration, Timeout.Infinite);
         }
 
         private string DetermineWindowsStoreSaveFile()
@@ -488,7 +499,13 @@ namespace TSW3LM
             GameLiveryInfo.NoAutoRefresh = true;
             Log.AddLogMessage("Saving local game liveries to disk...", "MW:SaveClick");
             lblMessage.Content = "";
-            Game.Save();
+            try
+            {
+                Game.Save();
+                ShowStatusText("Game liveries successfully saved. Restart the game to use the liveries");
+            }
+            catch (Exception ex)
+            { Log.AddLogMessage(ex.Message, "MW:Save_Click", Log.LogLevel.ERROR); }
 
             Game.Load();
             UpdateGameGui();
