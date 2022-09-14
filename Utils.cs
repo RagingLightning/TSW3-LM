@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Windows.Forms;
 
 namespace TSW3LM
 {
@@ -123,6 +124,21 @@ namespace TSW3LM
             return name;
         }
 
+        internal static void ExceptionHandler(object sender, UnhandledExceptionEventArgs e)
+        {
+            Log.AddLogMessage("An Exception occured that was not handled within the program!", "EX", Log.LogLevel.ERROR);
+            Exception ex = (Exception) e.ExceptionObject;
+            Log.LogPrintException(ex, "EX");
+            if (e.IsTerminating)
+            {
+                Log.AddLogMessage("The program is forced to terminate!", "EX", Log.LogLevel.ERROR);
+            } else
+            {
+                Log.AddLogMessage("The program can continue, correct behaviour is not guaranteed though!", "EX", Log.LogLevel.ERROR);
+                MainWindow.INSTANCE.ShowStatusText("[ERROR] Unhandled exception, please restart the program asap!");
+            }
+            throw new NotImplementedException();
+        }
     }
 
     class Log
@@ -167,7 +183,7 @@ namespace TSW3LM
             lock (locker)
             {
                 string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
-                string LogLine = $"[{level.ToString()}] {Timestamp} {stack} | {message}\n";
+                string LogLine = $"[{level}] {Timestamp} {stack} | {message}\n";
                 if (ConsoleLevel >= level)
                 {
                     Trace.Write(LogLine);
@@ -182,7 +198,17 @@ namespace TSW3LM
 
         public static void LogPrintException(Exception e, string stack = "-")
         {
-
+            lock (locker)
+            {
+                string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
+                string LogLine = $"[{LogLevel.ERROR}] {Timestamp} {stack} | {e.Message}\n\nStack Trace:\n{e.StackTrace}\n";
+                Trace.Write(LogLine);
+                Console.Write(LogLine);
+                foreach (KeyValuePair<string, LogLevel> p in LogPaths)
+                {
+                    File.AppendAllText(p.Key, LogLine);
+                }
+            }
         }
 
         public enum LogLevel

@@ -10,8 +10,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
-using System.Reflection.Metadata;
-using System.Linq.Expressions;
 
 namespace TSW3LM
 {
@@ -46,6 +44,8 @@ namespace TSW3LM
                 Log.ConsoleLevel = Log.LogLevel.DEBUG;
             }
             Log.AddLogMessage($"Command line: {Environment.CommandLine}", "MW:<init>", Log.LogLevel.DEBUG);
+
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(Utils.ExceptionHandler);
 
             string[] args = Environment.GetCommandLineArgs();
             Config.SkipAutosave = true;
@@ -310,7 +310,7 @@ namespace TSW3LM
             if (show) LiveryInfoWindow.INSTANCE.Show();
         }
 
-        private void ShowStatusText(string text, int duration = 2500)
+        internal void ShowStatusText(string text, int duration = 2500)
         {
             lblMessage.Content = text;
             new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
