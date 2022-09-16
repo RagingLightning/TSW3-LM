@@ -17,6 +17,8 @@ namespace TSW3LM
 
         private static string Path;
 
+        public static Dictionary<string, Info> Data = new Dictionary<string, Info>();
+
         internal static bool NoAutoRefresh = false;
 
         internal static void Init(string path)
@@ -98,6 +100,12 @@ namespace TSW3LM
         {
             Log.AddLogMessage($"Setting Info for Livery Id {liveryId}", "LI:SetInfo");
 
+            if (!Data.ContainsKey(liveryId))
+            {
+                Log.AddLogMessage($"No entry in Info-Dictionary yet, creating one", "LI:SetInfo", Log.LogLevel.DEBUG);
+                Data.Add(liveryId, new Info());
+            }
+
             List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
             if (gameIds.Contains(liveryId))
             {
@@ -110,19 +118,10 @@ namespace TSW3LM
                         liveryId = "L_" + Utils.GenerateHex(length);
                     } while (gameIds.Contains(liveryId));
                     Log.AddLogMessage($"New Livery Id: {liveryId}", "LI:SetInfo", Log.LogLevel.DEBUG);
-
-                    Data.Add(liveryId, new Info(name, model));
-
-                    Save();
-                    return liveryId;
                 }
-                Data[liveryId].Name = name;
-                Data[liveryId].Model = model;
-
-                Save();
-                return liveryId;
             }
-            Data.Add(liveryId, new Info(name, model));
+            Data[liveryId].Name = name;
+            Data[liveryId].Model = model;
 
             Save();
             return liveryId;
@@ -162,8 +161,6 @@ namespace TSW3LM
                 Save();*/
             }
         }
-
-        public static Dictionary<string, Info> Data = new Dictionary<string, Info>();
 
         internal class Info
         {
