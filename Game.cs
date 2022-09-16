@@ -32,7 +32,9 @@ namespace TSW3LM
                 Log.AddLogMessage("Deserializing Game Livery file...", "G:Load", Log.LogLevel.DEBUG);
                 Log.AddLogMessage($"File Path: {Config.GamePath}", "G:Load", Log.LogLevel.DEBUG);
 
-                GameData = UESerializer.Read(File.Open(Config.GamePath, FileMode.Open, FileAccess.Read, FileShare.Read));
+                FileStream stream = File.Open(Config.GamePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                GameData = UESerializer.Read(stream);
+                stream.Close();
                
                 Log.AddLogMessage("Game Livery file fully deserialized", "G:Load", Log.LogLevel.DEBUG);
             }
