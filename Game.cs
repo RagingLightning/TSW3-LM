@@ -114,14 +114,16 @@ namespace TSW3LM
                 set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value = value; } 
             }
 
+            internal bool IsLegacy { get; set; }
+
             internal UEGenericStructProperty GvasBaseProperty;
 
-            internal Livery(UEGenericStructProperty baseProp)
+            internal Livery(UEGenericStructProperty baseProp, bool isLegacy = false)
             {
                 GvasBaseProperty = baseProp;
+                IsLegacy = isLegacy;
 
                 Log.AddLogMessage($"Livery {ID} loaded successfully", "G:Livery:<init>", Log.LogLevel.DEBUG);
-
             }
 
 
