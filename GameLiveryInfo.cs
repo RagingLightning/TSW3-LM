@@ -12,10 +12,14 @@ namespace TSW3LM
 {
     internal static class GameLiveryInfo
     {
-        internal static Process TswMonitor;
-        internal static bool Running = true;
 
+#pragma warning disable CS8618
+        internal static Process TswMonitor;
         private static string Path;
+#pragma warning restore CS8618
+
+
+        internal static bool Running = true;
 
         public static Dictionary<string, Info> Data = new Dictionary<string, Info>();
 
@@ -23,8 +27,8 @@ namespace TSW3LM
 
         internal static void Init(string path)
         {
-            Log.AddLogMessage("LiveryInfo initializing...", "LI:Init");
-            Log.AddLogMessage($"|> Path: {path}", "LI:Init", Log.LogLevel.DEBUG);
+            Log.Message("LiveryInfo initializing...", "LI:Init");
+            Log.Message($"|> Path: {path}", "LI:Init", Log.LogLevel.DEBUG);
             Path = path;
 
             if (File.Exists(Path))
@@ -33,22 +37,22 @@ namespace TSW3LM
             }
             else
             {
-                Log.AddLogMessage("|> File doesn't exist, initializing empty data", "LI:Init", Log.LogLevel.WARNING);
+                Log.Message("|> File doesn't exist, initializing empty data", "LI:Init", Log.LogLevel.WARNING);
                 Data = new Dictionary<string, Info>();
             }
         }
 
         internal static void Load()
         {
-            Log.AddLogMessage("Loading Livery info...", "LI:Load");
+            Log.Message("Loading Livery info...", "LI:Load");
             Data = JsonConvert.DeserializeObject<Dictionary<string, Info>>(File.ReadAllText(Path));
 
-            Log.AddLogMessage("Livery info loaded.", "LI:Load", Log.LogLevel.DEBUG);
+            Log.Message("Livery info loaded.", "LI:Load", Log.LogLevel.DEBUG);
         }
 
         internal static void Save()
         {
-            Log.AddLogMessage("Saving Livery info...", "LI:Save");
+            Log.Message("Saving Livery info...", "LI:Save");
 
             try
             {
@@ -56,10 +60,10 @@ namespace TSW3LM
             }
             catch (Exception e)
             {
-                Log.AddLogMessage($"Error while saving livery info: {e.Message}", "LI:Save", Log.LogLevel.WARNING);
+                Log.Exception($"Error while saving livery info!", e, "LI:Save", Log.LogLevel.WARNING);
                 return;
             }
-            Log.AddLogMessage("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
+            Log.Message("Livery info saved.", "LI:Save", Log.LogLevel.DEBUG);
         }
 
         internal static void Cleanup()
@@ -69,7 +73,7 @@ namespace TSW3LM
             {
                 if (!gameIds.Contains(liveryId))
                 {
-                    Log.AddLogMessage($"Removing info for ID {liveryId}, because it no longer exists", "LI:Save", Log.LogLevel.DEBUG);
+                    Log.Message($"Removing info for ID {liveryId}, because it no longer exists", "LI:Save", Log.LogLevel.DEBUG);
                     Data.Remove(liveryId);
                 }
             }
@@ -98,18 +102,18 @@ namespace TSW3LM
 
         internal static string SetInfo(string liveryId, string name, string model, bool replace = false)
         {
-            Log.AddLogMessage($"Setting Info for Livery Id {liveryId}", "LI:SetInfo");
+            Log.Message($"Setting Info for Livery Id {liveryId}", "LI:SetInfo");
 
             if (!Data.ContainsKey(liveryId))
             {
-                Log.AddLogMessage($"No entry in Info-Dictionary yet, creating one", "LI:SetInfo", Log.LogLevel.DEBUG);
+                Log.Message($"No entry in Info-Dictionary yet, creating one", "LI:SetInfo", Log.LogLevel.DEBUG);
                 Data.Add(liveryId, new Info());
             }
 
             List<string> gameIds = Game.Liveries.Values.Select(l => l.ID).ToList();
             if (gameIds.Contains(liveryId))
             {
-                Log.AddLogMessage($"Livery Id already exists (replace: {replace})", "LI:SetInfo", Log.LogLevel.DEBUG);
+                Log.Message($"Livery Id already exists (replace: {replace})", "LI:SetInfo", Log.LogLevel.DEBUG);
                 if (!replace)
                 {
                     do
@@ -117,7 +121,7 @@ namespace TSW3LM
                         int length = liveryId.Length - 2;
                         liveryId = "L_" + Utils.GenerateHex(length);
                     } while (gameIds.Contains(liveryId));
-                    Log.AddLogMessage($"New Livery Id: {liveryId}", "LI:SetInfo", Log.LogLevel.DEBUG);
+                    Log.Message($"New Livery Id: {liveryId}", "LI:SetInfo", Log.LogLevel.DEBUG);
                 }
             }
             Data[liveryId].Name = name;

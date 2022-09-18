@@ -8,7 +8,9 @@ namespace TSW3LM
     /// </summary>
     public partial class LiveryInfoWindow : Window
     {
+#pragma warning disable CS8618
         internal static LiveryInfoWindow INSTANCE;
+#pragma warning restore CS8618
 
         internal ThreadStart? Callback = null;
 

@@ -31,7 +31,7 @@ namespace TSW3LM
         {
             WebRequest UpdateRequest = WebRequest.Create("https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat");
             string UpdateResponse = new StreamReader(UpdateRequest.GetResponse().GetResponseStream()).ReadToEnd();
-            Log.AddLogMessage($"Got version information: {version}->{UpdateResponse}", "U:CheckUpdate", Log.LogLevel.DEBUG);
+            Log.Message($"Got version information: {version}->{UpdateResponse}", "U:CheckUpdate", Log.LogLevel.DEBUG);
             string[] NewVersion = UpdateResponse.Split('.');
             string[] CurrentVersion = version.Split('.');
             char CurrentSuffix = ' ';
@@ -62,7 +62,7 @@ namespace TSW3LM
         {
             WebRequest UpdateRequest = WebRequest.Create("https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/devversion.dat");
             string UpdateResponse = new StreamReader(UpdateRequest.GetResponse().GetResponseStream()).ReadToEnd();
-            Log.AddLogMessage($"Got version information: {version}->{UpdateResponse}", "U:CheckDevUpdate", Log.LogLevel.DEBUG);
+            Log.Message($"Got version information: {version}->{UpdateResponse}", "U:CheckDevUpdate", Log.LogLevel.DEBUG);
             string[] NewVersion = UpdateResponse.Split('.');
             string[] CurrentVersion = version.Split('.');
             char NewSuffix = ' ';
@@ -127,23 +127,21 @@ namespace TSW3LM
 
         internal static void ExceptionHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            Log.AddLogMessage("An Exception occured that was not handled within the program!", "EX", Log.LogLevel.ERROR);
-            Exception ex = (Exception) e.ExceptionObject;
-            Log.PrintException(ex, "EX");
+            Log.Exception("An Exception occured that was not handled within the program!", (Exception) e.ExceptionObject, "EX");
             if (e.IsTerminating)
             {
-                Log.AddLogMessage("The program is forced to terminate!", "EX", Log.LogLevel.ERROR);
+                Log.Message("The program is forced to terminate!", "EX", Log.LogLevel.ERROR);
             } else
             {
-                Log.AddLogMessage("The program can continue, correct behaviour is not guaranteed though!", "EX", Log.LogLevel.ERROR);
-                MainWindow.INSTANCE.ShowStatusText("[ERROR] Unhandled exception, please restart the program asap!");
+                Log.Message("The program can continue, correct behaviour is not guaranteed though!", "EX", Log.LogLevel.ERROR);
+                MainWindow.INSTANCE.ShowStatusText("[ERR] Unhandled exception, please restart the program asap!");
             }
             throw new NotImplementedException();
         }
 
         internal static Game.Livery convertTSW2(byte[] tsw2Data)
         {
-            byte[] data = new byte[tsw2Data.Length];
+            byte[] data = new byte[tsw2Data.Length+9];
             for (int i = 1; i <= tsw2Data.Length; i++)
             {
                 if (i == tsw2Data.Length)
@@ -151,18 +149,28 @@ namespace TSW3LM
                 else
                     data[i-1] = tsw2Data[i];
             }
+            data[^9] = 5;
+            data[^8] = 0;
+            data[^7] = 0;
+            data[^6] = 0;
+            data[^5] = (byte)'N';
+            data[^4] = (byte)'o';
+            data[^3] = (byte)'n';
+            data[^2] = (byte)'e';
+            data[^1] = 0;
 
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
             UEGenericStructProperty prop = new UEGenericStructProperty();
             prop.StructType = "ReskinSave";
             prop.Name = "Reskins";
+            prop.Type = "StructProperty";
             prop.ValueLength = 0; //TODO: Determine
             while(UEProperty.Read(reader) is UEProperty p)
             {
                 prop.Properties.Add(p);
             }
 
-            return new Game.Livery(prop, true);
+            return new Game.Livery(prop, false);
         }
     }
 
@@ -203,7 +211,7 @@ namespace TSW3LM
         /// <param name="message">The log message.</param>
         /// <param name="stack">A simple string representation of the call stack</param>
         /// <param name="level">The LogLevel of this message, it will only be logged to each file that has a LogLevel at or above that of the message</param>
-        public static void AddLogMessage(string message, string stack = "-", LogLevel level = LogLevel.INFO)
+        public static void Message(string message, string stack = "-", LogLevel level = LogLevel.INFO)
         {
             lock (locker)
             {
@@ -214,22 +222,27 @@ namespace TSW3LM
                     Trace.Write(LogLine);
                     Console.Write(LogLine);
                 }
-                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(pair => pair.Value <= level))
+                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(p => p.Value <= level))
                 {
                     File.AppendAllText(p.Key, LogLine);
                 }
             }
         }
 
-        public static void PrintException(Exception e, string stack = "-")
+        public static void Exception(string message, Exception e, string stack = "-", LogLevel level = LogLevel.ERROR)
         {
+            Message(message, stack, level);
             lock (locker)
             {
                 string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
-                string LogLine = $"[{LogLevel.ERROR}] {Timestamp} {stack} | {e.Message}\n\nStack Trace:\n{e.StackTrace}\n";
-                Trace.Write(LogLine);
-                Console.Write(LogLine);
-                foreach (KeyValuePair<string, LogLevel> p in LogPaths)
+                LogLevel stackLevel = level == LogLevel.ERROR ? LogLevel.ERROR : LogLevel.DEBUG;
+                string LogLine = $"[{level}] {Timestamp} {stack} | {e.Message}\n{e.StackTrace}\n";
+                if (ConsoleLevel <= level)
+                {
+                    Trace.Write(LogLine);
+                    Console.Write(LogLine);
+                }
+                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(p => p.Value <= level))
                 {
                     File.AppendAllText(p.Key, LogLine);
                 }
@@ -255,12 +268,21 @@ namespace TSW3LM
 
         public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
-            Library.Livery livery = existingValue == null ? new Library.Livery(null, null) : (Library.Livery)existingValue;
+            Library.Livery livery = existingValue == null ? new Library.Livery() : (Library.Livery)existingValue;
             JObject jo = JObject.Load(reader);
-            livery.Name = jo["Name"].ToString();
-            livery.Model = jo["Model"].ToString();
-            livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
-            return livery;
+            try
+            {
+#pragma warning disable CS8602,CS8600
+                livery.Name = jo["Name"].ToString();
+                livery.Model = jo["Model"].ToString();
+                livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
+                return livery;
+#pragma warning restore CS8602,CS8600
+            }
+            catch (Exception)
+            {
+                throw new FormatException("Unable to deserialize library livery");
+            }
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
