@@ -151,15 +151,6 @@ namespace TSW3LM
                 else
                     data[i - 1] = tsw2Data[i];
             }
-            data[^9] = 5;
-            data[^8] = 0;
-            data[^7] = 0;
-            data[^6] = 0;
-            data[^5] = (byte)'N';
-            data[^4] = (byte)'o';
-            data[^3] = (byte)'n';
-            data[^2] = (byte)'e';
-            data[^1] = 0;
 
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
             UEGenericStructProperty prop = new UEGenericStructProperty();
