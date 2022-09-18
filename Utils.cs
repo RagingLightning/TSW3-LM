@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using GvasConverter;
+using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -139,6 +140,47 @@ namespace TSW3LM
             }
             throw new NotImplementedException();
         }
+
+        internal static Game.Livery convertTSW2(byte[] tsw2Data)
+        {
+            byte[] data = new byte[tsw2Data.Length];
+            for (int i = 1; i <= tsw2Data.Length; i++)
+            {
+                if (i == tsw2Data.Length)
+                    data[i-1] = 0;
+                else
+                    data[i-1] = tsw2Data[i];
+            }
+
+            BinaryReader reader = new BinaryReader(new MemoryStream(data));
+            UEGenericStructProperty prop = new UEGenericStructProperty();
+            prop.StructType = "ReskinSave";
+            prop.Name = "Reskins";
+            prop.ValueLength = 0; //TODO: Determine
+            while(UEProperty.Read(reader) is UEProperty p)
+            {
+                prop.Properties.Add(p);
+            }
+
+            return new Game.Livery(prop, true);
+        }
+
+        internal static GameLiveryInfo.Info makeInfoForTSW2(Game.Livery livery)
+        {
+            if (!livery.IsLegacy)
+                throw new ArgumentException("makeInfoForTSW2() can only be called on legacy liveries!");
+
+            try
+            {
+                string name = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "DisplayName")).Value;
+                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value;
+                return new GameLiveryInfo.Info(name, model);
+            } catch (Exception e)
+            {
+                Log.AddLogMessage("Unable to determine Name and Model from TSW2 converted livery", "makeInfoForTSW2", Log.LogLevel.ERROR);
+                return new GameLiveryInfo.Info();
+            }
+        }
     }
 
     class Log
@@ -184,12 +226,12 @@ namespace TSW3LM
             {
                 string Timestamp = DateTime.Now.ToString("MMddTHH:mm:ss.fff");
                 string LogLine = $"[{level}] {Timestamp} {stack} | {message}\n";
-                if (ConsoleLevel >= level)
+                if (ConsoleLevel <= level)
                 {
                     Trace.Write(LogLine);
                     Console.Write(LogLine);
                 }
-                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(pair => pair.Value >= level))
+                foreach (KeyValuePair<string, LogLevel> p in LogPaths.Where(pair => pair.Value <= level))
                 {
                     File.AppendAllText(p.Key, LogLine);
                 }
@@ -213,10 +255,10 @@ namespace TSW3LM
 
         public enum LogLevel
         {
-            ERROR = 1,
-            WARNING = 2,
-            INFO = 3,
-            DEBUG = 4
+            ERROR = 4,
+            WARNING = 3,
+            INFO = 2,
+            DEBUG = 1
         }
 
     }
@@ -234,7 +276,7 @@ namespace TSW3LM
             JObject jo = JObject.Load(reader);
             livery.Name = jo["Name"].ToString();
             livery.Model = jo["Model"].ToString();
-            livery.GvasBaseProperty = (GvasFormat.Serialization.UETypes.UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
+            livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
             return livery;
         }
 
