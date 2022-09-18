@@ -10,6 +10,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
+using GvasFormat.Serialization.UETypes;
 
 namespace TSW3LM
 {
@@ -258,6 +259,26 @@ namespace TSW3LM
             ShowStatusText("Livery successfully imported");
         }
 
+        private void ImportTsw2Livery(string fileName)
+        {
+            Log.AddLogMessage($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
+            try
+            {
+                Game.Livery livery = Utils.convertTSW2(File.ReadAllBytes(fileName));
+                string name = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "DisplayName")).Value;
+                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value;
+                string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
+                livery.ID = newId;
+                Game.Add(livery);
+            }
+            catch (Exception e)
+            {
+                Log.AddLogMessage("Error importing TSW2 livery!", "MW:ImportTsw2Livery", Log.LogLevel.ERROR);
+                Log.PrintException(e, "MW:ImportTsw2Livery");
+                lblMessage.Content = $"[ERR] Error while importing TSW2 livery: {e.Message}";
+            }
+        }
+
         private void PrepareLiveryExport(Game.Livery gl)
         {
             Log.AddLogMessage($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
@@ -400,9 +421,26 @@ namespace TSW3LM
             UpdateGameGui();
         }
 
-        private void btnJExport_Click(object sender, RoutedEventArgs e)     //Reuse for TSW2 import maybe?
+        private void btnTsw2Import_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            try
+            {
+                lblMessage.Content = "";
+                OpenFileDialog Dialog = new OpenFileDialog();
+                Dialog.Filter = "TSW2 Livery (*.tsw2liv)|*.tsw2liv";
+                Dialog.DefaultExt = "*.tsw2liv";
+                Dialog.InitialDirectory = Config.LibraryPath;
+                if (Dialog.ShowDialog() == true)
+                {
+                    ImportTsw2Livery(Dialog.FileName);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Log.AddLogMessage($"Error while changing library folder:", "MW:LibDirClick", Log.LogLevel.ERROR);
+                Log.PrintException(ex, "MW:LibDirClick");
+            }
         }
 
         private void btnInfo_Click(object sender, RoutedEventArgs e)
@@ -431,10 +469,11 @@ namespace TSW3LM
                 if (Config.LibraryPath != "" && Config.GamePath != "")
                     ((Data)DataContext).Useable = true;
 
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Log.AddLogMessage($"Error while changing library folder:", "MW:LibDirClick", Log.LogLevel.ERROR);
-                Log.LogPrintException(ex, "MW:LibDirClick");
+                Log.PrintException(ex, "MW:LibDirClick");
             }
         }
 
@@ -467,7 +506,7 @@ namespace TSW3LM
             catch (Exception ex)
             {
                 Log.AddLogMessage($"Error while changing game folder:", "MW:GameDirClick", Log.LogLevel.ERROR);
-                Log.LogPrintException(ex, "MW:GameDirClick");
+                Log.PrintException(ex, "MW:GameDirClick");
             }
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
@@ -494,7 +533,7 @@ namespace TSW3LM
         {
             lblMessage.Content = "";
             OpenFileDialog Dialog = new OpenFileDialog();
-            Dialog.Filter = "TSW2 Livery Backup (*.bak3)|*.bak3";
+            Dialog.Filter = "TSW3 Livery Backup (*.bak3)|*.bak3";
             Dialog.DefaultExt = "*.bak3";
             Dialog.InitialDirectory = Config.LibraryPath;
             if (Dialog.ShowDialog() == true)

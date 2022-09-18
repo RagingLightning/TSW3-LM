@@ -28,10 +28,10 @@
         <TextBox x:Name="txtLibDir" Height="22" Margin="20,30,105,0" TextWrapping="NoWrap" VerticalAlignment="Top" MaxLines="1"/>
         <Button Content="Set Lib Dir" Height="22" Margin="0,30,20,0" VerticalAlignment="Top" Click="btnLibDir_Click" HorizontalAlignment="Right" Width="75"/>
         <ListBox x:Name="lstLibraryLiveries" Margin="20,60,20,20" IsEnabled="{Binding Useable}"/>
-        <Button Content="IMPORT  🡒" HorizontalAlignment="Center" Height="36" Margin="0,184,0,0" VerticalAlignment="Top" Width="108" Click="btnImport_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
+        <Button Content="IMPORT  🡒" HorizontalAlignment="Center" Height="36" Margin="0,205,0,0" VerticalAlignment="Top" Width="108" Click="btnImport_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
         <Button Content="🡐 EXPORT" HorizontalAlignment="Center" Height="35" Margin="0,241,0,0" VerticalAlignment="Top" Width="108" Click="btnExport_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
         <Button Content="View/Edit Info >" HorizontalAlignment="Center" Height="20" Margin="0,125,0,0" VerticalAlignment="Top" Width="108" Click="btnInfo_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
-        <Button Content="JSON EXPORT" HorizontalAlignment="Center" Height="20" Margin="0,221,0,0" VerticalAlignment="Top" Width="108" Click="btnJExport_Click" IsEnabled="false" Grid.Column="1"/>
+        <Button Content="*.tsw2liv Import 🡒" HorizontalAlignment="Center" Height="20" Margin="0,170,0,0" VerticalAlignment="Top" Width="108" Click="btnTsw2Import_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
         <Button Content="RESTORE" HorizontalAlignment="Center" Height="41" Margin="0,63,0,0" VerticalAlignment="Top" Width="108" Click="btnRestore_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
         <Label x:Name="lblMessage" Height="80" Margin="20,0,20,20" VerticalAlignment="Bottom" Grid.ColumnSpan="3" Grid.Row="1"/>
         <Button Height="34" Margin="0,4,95,0" VerticalAlignment="Top" Click="btnReset_Click" Grid.Row="1" HorizontalAlignment="Right" Width="240" Content="REFRESH" IsEnabled="{Binding Useable}"/>
