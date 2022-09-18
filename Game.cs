@@ -14,6 +14,7 @@ namespace TSW3LM
     {
         private static Gvas GameData;
         private static UEArrayProperty GvasReskinArray;
+        private static UEArrayProperty GvasLegacyArray;
 
         internal static Dictionary<int, Livery> Liveries = new Dictionary<int, Livery>();
 
@@ -63,13 +64,30 @@ namespace TSW3LM
                     GvasReskinArray = new UEArrayProperty();
                     return null;
                 }
-                GvasReskinArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty);
+                GvasReskinArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
+
+                try
+                {
+                    GvasLegacyArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "Reskins");
+                } catch (Exception)
+                {
+                    GvasLegacyArray = new UEArrayProperty();
+                    GameData.Properties.Add(GvasLegacyArray);
+                    GvasLegacyArray.Name = "Reskins";
+                }
+
                 int i = 0;
                 foreach (UEProperty LiveryBase in GvasReskinArray.Items)
                 {
                     while (Liveries.ContainsKey(i)) i++;
                     Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase));
                 }
+                foreach (UEProperty LiveryBase in GvasLegacyArray.Items)
+                {
+                    while (Liveries.ContainsKey(i)) i++;
+                    Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase, true));
+                }
+
             } catch (Exception e)
             {
                 Log.AddLogMessage($"Error loading Livery: {e.Message}", "G:Load", Log.LogLevel.ERROR);
@@ -83,13 +101,21 @@ namespace TSW3LM
 
         internal static void Save()
         {
-            GvasReskinArray.Count = Liveries.Count;
-            List<UEProperty> properties = new List<UEProperty>();
-            foreach (Livery livery in Liveries.Values)
+            List<UEGenericStructProperty> tsw3 = Liveries.Values.Where(p => !p.IsLegacy).Select(p => p.GvasBaseProperty).ToList();
+            List<UEGenericStructProperty> tsw2 = Liveries.Values.Where(p => p.IsLegacy).Select(p => p.GvasBaseProperty).ToList();
+
+            GvasReskinArray.Count = tsw3.Count;
+            GvasReskinArray.Items = tsw3.ToArray();
+
+            if (tsw2.Count > 0)
             {
-                properties.Add(livery.GvasBaseProperty);
+                GvasLegacyArray.Count = tsw2.Count;
+                GvasLegacyArray.Items = tsw2.ToArray();
             }
-            GvasReskinArray.Items = properties.ToArray();
+            else
+            {
+                GameData.Properties.Remove(GvasLegacyArray);
+            }
 
             byte[] Contents = File.ReadAllBytes(Config.GamePath);
             Directory.CreateDirectory($"{Config.LibraryPath}\\backup");
