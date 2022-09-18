@@ -20,21 +20,23 @@ namespace TSW3LM
         {
             Liveries.Clear();
 
-            Log.AddLogMessage("Loading library...", "L:Load");
+            Log.Message("Loading library...", "L:Load");
             DirectoryInfo Info = new DirectoryInfo(Config.LibraryPath);
             int i = 0;
             foreach (FileInfo file in Info.GetFiles("*.tsw3", SearchOption.TopDirectoryOnly))
             {
                 try
                 {
-                    Livery livery = JsonConvert.DeserializeObject<Livery>(File.ReadAllText(file.FullName), new LibLivJsonConverter());
+                    Livery? livery = JsonConvert.DeserializeObject<Livery>(File.ReadAllText(file.FullName), new LibLivJsonConverter());
+                    if (livery == null)
+                        throw new FormatException("Library livery could not be deserialized");
                     livery.FileName = file.Name;
                     while (Liveries.ContainsKey(i)) i++;
                     Liveries.Add(i, livery);
                 }
                 catch (Exception e)
                 {
-                    Log.AddLogMessage($"Error while loading livery {file.Name}: {e.Message}", "L:Load", Log.LogLevel.WARNING);
+                    Log.Exception($"Error while loading livery {file.Name}!", e, "L:Load", Log.LogLevel.WARNING);
                 }
             }
 
@@ -67,19 +69,19 @@ namespace TSW3LM
                 }
             }*/
 
-            Log.AddLogMessage($"Library fully loaded", "L:Load", Log.LogLevel.DEBUG);
+            Log.Message($"Library fully loaded", "L:Load", Log.LogLevel.DEBUG);
         }
 
         internal static void Save(Livery livery)
         {
-            Log.AddLogMessage($"Saving library livery {livery.Id}", "L:Save");
+            Log.Message($"Saving library livery {livery.Id}", "L:Save");
             try
             {
                 File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery));
             }
             catch (Exception e)
             {
-                Log.AddLogMessage($"Error while saving livery {livery.FileName}: {e.Message}", "L:Save", Log.LogLevel.WARNING);
+                Log.Exception($"Error while saving livery {livery.FileName}!", e, "L:Save", Log.LogLevel.WARNING);
             }
         }
 
@@ -99,16 +101,27 @@ namespace TSW3LM
             }
             public string Name { get; set; }
             public string Model { get; set; }
+            public bool Compressed { get; set; }
 
 
             public UEGenericStructProperty GvasBaseProperty;
 
-            public Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>")
+            public Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>", bool compressed = true)
             {
                 FileName = fileName;
                 GvasBaseProperty = property;
                 Name = name;
                 Model = model;
+                Compressed = compressed;
+            }
+
+            internal Livery()
+            {
+                FileName = string.Empty;
+                GvasBaseProperty = new UEGenericStructProperty();
+                Name = string.Empty;
+                Model = string.Empty;
+                Compressed = true;
             }
         }
 

@@ -84,7 +84,7 @@ namespace TSW3LM
                 }
                 catch (Exception e)
                 {
-                    Log.AddLogMessage($"Failed to parse command line argument '{args[i]}': {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
+                    Log.Message($"Failed to parse command line argument '{args[i]}': {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
                 }
             }
             Config.SkipAutosave = false;
@@ -93,14 +93,14 @@ namespace TSW3LM
             {
                 try
                 {
-                    Log.AddLogMessage("Checking for updates...", "MW:<init>");
+                    Log.Message("Checking for updates...", "MW:<init>");
                     string? newVersion = Utils.CheckUpdate(VERSION);
                     if (newVersion != null)
                         new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
                 }
                 catch (WebException e)
                 {
-                    Log.AddLogMessage($"Unable to check for updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
+                    Log.Message($"Unable to check for updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
                 }
 
             }
@@ -109,14 +109,14 @@ namespace TSW3LM
             {
                 try
                 {
-                    Log.AddLogMessage("Checking for dev updates...", "MW::<init>");
+                    Log.Message("Checking for dev updates...", "MW::<init>");
                     string? newVersion = Utils.CheckDevUpdate(VERSION);
                     if (newVersion != null)
                         new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
                 }
                 catch (WebException e)
                 {
-                    Log.AddLogMessage($"Unable to check for dev updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
+                    Log.Message($"Unable to check for dev updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
                 }
             }
 
@@ -124,7 +124,7 @@ namespace TSW3LM
 
             if (Config.GamePath != "")
             {
-                Log.AddLogMessage("Loading GamePath Data...", "MW::<init>");
+                Log.Message("Loading GamePath Data...", "MW::<init>");
                 if (File.Exists(Config.GamePath))
                 {
                     txtGameDir.Text = Config.GamePath;
@@ -211,88 +211,89 @@ namespace TSW3LM
 
         internal void UpdateGameGui()
         {
-            Log.AddLogMessage("Updating game liveries in GUI...", "MW:UpdateGameGui");
+            Log.Message("Updating game liveries in GUI...", "MW:UpdateGameGui");
             lstGameLiveries.Items.Clear();
             for (int i = 0; i < Config.MaxGameLiveries; i++)
             {
                 if (!Game.Liveries.ContainsKey(i))
-                    lstGameLiveries.Items.Add($"({i}) <empty>");
+                    lstGameLiveries.Items.Add($"({i+1}) <empty>");
                 else
                 {
                     string Id = Game.Liveries[i].ID;
                     GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
-                    string Text = $"({i}) {Info.Name} for {Info.Model}";
+                    string Text = Game.Liveries[i].Compressed ? $"({i + 1}) {Info.Name} for {Info.Model}" : $"({i+1}) [RAW] {Info.Name} for {Info.Model}";
                     lstGameLiveries.Items.Add(Text);
-                    Log.AddLogMessage($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                    Log.Message($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
                 }
             }
-            Log.AddLogMessage("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            Log.Message("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }
 
         internal void UpdateLibraryGui()
         {
-            Log.AddLogMessage("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
+            Log.Message("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
             lstLibraryLiveries.Items.Clear();
             foreach (int i in Library.Liveries.Keys)
             {
                 Library.Livery livery = Library.Liveries[i];
                 string Text = $"{livery.Name} for {livery.Model} <{livery.FileName}>";
                 lstLibraryLiveries.Items.Add(Text);
-                Log.AddLogMessage($"Added library livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
+                Log.Message($"Added library livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
             }
 
-            Log.AddLogMessage("Library liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            Log.Message("Library liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }
         private void ImportLivery(Library.Livery ll)
         {
-            Log.AddLogMessage($"Importing livery from file {ll.FileName}", "MW:ImportLivery");
+            Log.Message($"Importing livery from file {ll.FileName}", "MW:ImportLivery");
             string registeredId = GameLiveryInfo.SetInfo(ll.Id, ll.Name, ll.Model);
             if (registeredId != ll.Id)
             {
-                Log.AddLogMessage($"ID {ll.Id} already in use; new ID is {registeredId}", "MW:ImportLivery", Log.LogLevel.DEBUG);
+                Log.Message($"ID {ll.Id} already in use; new ID is {registeredId}", "MW:ImportLivery", Log.LogLevel.DEBUG);
                 ll.Id = registeredId;
                 Library.Save(ll);
             }
 
-            Game.Add(new Game.Livery(ll.GvasBaseProperty));
-            Log.AddLogMessage($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
+            Game.Add(new Game.Livery(ll.GvasBaseProperty, ll.Compressed));
+            Log.Message($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
             ShowStatusText("Livery successfully imported");
         }
 
         private void ImportTsw2Livery(string fileName)
         {
-            Log.AddLogMessage($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
+            Log.Message($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
             try
             {
                 Game.Livery livery = Utils.convertTSW2(File.ReadAllBytes(fileName));
-                string name = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "DisplayName")).Value;
-                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value;
+                string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
                 string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
                 livery.ID = newId;
                 Game.Add(livery);
+                UpdateGameGui();
+                ShowStatusText("*.tsw2liv successfully imported");
             }
             catch (Exception e)
             {
-                Log.AddLogMessage("Error importing TSW2 livery!", "MW:ImportTsw2Livery", Log.LogLevel.ERROR);
-                Log.PrintException(e, "MW:ImportTsw2Livery");
+                Log.Exception("Error importing TSW2 livery!", e, "MW:ImportTsw2Livery");
                 lblMessage.Content = $"[ERR] Error while importing TSW2 livery: {e.Message}";
             }
         }
 
         private void PrepareLiveryExport(Game.Livery gl)
         {
-            Log.AddLogMessage($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
+            Log.Message($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
             GameLiveryInfo.Get(gl.ID, () => ExportLivery(gl));
         }
 
         internal void ExportLivery(Game.Livery gl)
         {
-            Log.AddLogMessage($"Exporting livery {gl.ID}", "MW:ExportLivery");
+            Log.Message($"Exporting livery {gl.ID}", "MW:ExportLivery");
             GameLiveryInfo.Info info = GameLiveryInfo.Get(gl.ID);
             string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.tsw3");
             if (info.Name == "<unnamed>" && info.Model == "<unknown>")
             {
-                Log.AddLogMessage($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
+                Log.Message($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
                 SaveFileDialog Dialog = new SaveFileDialog
                 {
                     InitialDirectory = Config.LibraryPath,
@@ -303,17 +304,17 @@ namespace TSW3LM
                     fileName = Utils.SanitizeFileName(Dialog.SafeFileName);
                 else
                 {
-                    Log.AddLogMessage("Livery export cancelled by user", "MW:ExportLivery", Log.LogLevel.WARNING);
+                    Log.Message("Livery export cancelled by user", "MW:ExportLivery", Log.LogLevel.WARNING);
                     ShowStatusText("WARN: Livery export cancelled!");
                     return;
                 }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model);
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model, gl.Compressed);
             Library.Add(ll);
             Library.Save(ll);
 
-            Log.AddLogMessage($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
+            Log.Message($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
             ShowStatusText("Livery successfully exported");
 
             UpdateLibraryGui();
@@ -351,7 +352,7 @@ namespace TSW3LM
             {
                 pattern = "DovetailGames.TrainSimWorld2021_*";
                 saveFilePath = Directory.EnumerateDirectories(saveFilePath, pattern).First();
-                Log.AddLogMessage($"Found TrainSimWorld2021 package at '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
+                Log.Message($"Found TrainSimWorld2021 package at '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
                 saveFilePath += "\\SystemAppData\\wgs";
                 pattern = "*_*";
                 saveFilePath = Directory.EnumerateDirectories(saveFilePath, pattern).First();
@@ -362,10 +363,10 @@ namespace TSW3LM
             }
             catch (Exception)
             {
-                Log.AddLogMessage($"couldn't find pattern '{pattern}' in '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
+                Log.Message($"couldn't find pattern '{pattern}' in '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
                 return "";
             }
-            Log.AddLogMessage($"container idx file is at '{containerFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
+            Log.Message($"container idx file is at '{containerFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
             try
             {
                 byte[] containerFile = File.ReadAllBytes(containerFilePath);
@@ -388,10 +389,10 @@ namespace TSW3LM
             }
             catch (Exception)
             {
-                Log.AddLogMessage($"Unable to parse container idx file", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
+                Log.Message($"Unable to parse container idx file", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
                 return "";
             }
-            Log.AddLogMessage($"Liveries file is at '{saveFilePath}'");
+            Log.Message($"Liveries file is at '{saveFilePath}'");
             return saveFilePath;
         }
 
@@ -438,8 +439,7 @@ namespace TSW3LM
             }
             catch (Exception ex)
             {
-                Log.AddLogMessage($"Error while changing library folder:", "MW:LibDirClick", Log.LogLevel.ERROR);
-                Log.PrintException(ex, "MW:LibDirClick");
+                Log.Exception($"Error while changing library folder!", ex, "MW:LibDirClick");
             }
         }
 
@@ -458,10 +458,10 @@ namespace TSW3LM
                 Dialog.Description = "Select a folder for all your liveries to be exported to";
                 if (Dialog.ShowDialog() == true)
                 {
-                    Log.AddLogMessage("Changing library path...", "MW:LibDirClick", Log.LogLevel.DEBUG);
+                    Log.Message("Changing library path...", "MW:LibDirClick", Log.LogLevel.DEBUG);
                     Config.LibraryPath = Dialog.SelectedPath;
                     txtLibDir.Text = Dialog.SelectedPath;
-                    Log.AddLogMessage($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
+                    Log.Message($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
                 }
                 Library.Load();
                 UpdateLibraryGui();
@@ -472,8 +472,7 @@ namespace TSW3LM
             }
             catch (Exception ex)
             {
-                Log.AddLogMessage($"Error while changing library folder:", "MW:LibDirClick", Log.LogLevel.ERROR);
-                Log.PrintException(ex, "MW:LibDirClick");
+                Log.Exception($"Error while changing library folder!", ex, "MW:LibDirClick");
             }
         }
 
@@ -486,27 +485,26 @@ namespace TSW3LM
                 Dialog.Description = "Select the TSW3 game folder";
                 if (Dialog.ShowDialog() == true)
                 {
-                    Log.AddLogMessage("Changing game path...", "MW:GameDirClick", Log.LogLevel.DEBUG);
+                    Log.Message("Changing game path...", "MW:GameDirClick", Log.LogLevel.DEBUG);
                     if (Dialog.SelectedPath.Contains("TrainSimWorld3WGDK"))
                     {
-                        Log.AddLogMessage("Detected Windows store version", "MW:GameDirClick", Log.LogLevel.DEBUG);
+                        Log.Message("Detected Windows store version", "MW:GameDirClick", Log.LogLevel.DEBUG);
                         Config.GamePath = DetermineWindowsStoreSaveFile();
                     }
                     else
                     {
-                        Log.AddLogMessage("Detected Steam or epic store version", "MW:GameDirClick", Log.LogLevel.DEBUG);
+                        Log.Message("Detected Steam or epic store version", "MW:GameDirClick", Log.LogLevel.DEBUG);
                         Config.GamePath = $@"{Dialog.SelectedPath}\Saved\SaveGames\UGCLiveries_0.sav";
                     }
                     txtGameDir.Text = Dialog.SelectedPath;
-                    Log.AddLogMessage($"Changed game path to {Config.GamePath}", "MW::GameDirClick");
+                    Log.Message($"Changed game path to {Config.GamePath}", "MW::GameDirClick");
                 }
                 Game.Load();
                 UpdateGameGui();
             }
             catch (Exception ex)
             {
-                Log.AddLogMessage($"Error while changing game folder:", "MW:GameDirClick", Log.LogLevel.ERROR);
-                Log.PrintException(ex, "MW:GameDirClick");
+                Log.Exception($"Error while changing game folder:", ex, "MW:GameDirClick");
             }
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
@@ -525,7 +523,7 @@ namespace TSW3LM
             {
                 byte[] Contents = File.ReadAllBytes(Config.GamePath);
                 File.WriteAllBytes(Dialog.FileName, Contents);
-                Log.AddLogMessage($"Created backup: {Dialog.FileName}", "MW:BackupClick");
+                Log.Message($"Created backup: {Dialog.FileName}", "MW:BackupClick");
             }
         }
 
@@ -540,7 +538,7 @@ namespace TSW3LM
             {
                 byte[] Contents = File.ReadAllBytes(Dialog.FileName);
                 File.WriteAllBytes(Config.GamePath, Contents);
-                Log.AddLogMessage($"Restored from backup: {Dialog.FileName}", "MW:RestoreClick");
+                Log.Message($"Restored from backup: {Dialog.FileName}", "MW:RestoreClick");
             }
             Game.Load();
             UpdateGameGui();
@@ -549,7 +547,7 @@ namespace TSW3LM
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
             GameLiveryInfo.NoAutoRefresh = true;
-            Log.AddLogMessage("Saving local game liveries to disk...", "MW:SaveClick");
+            Log.Message("Saving local game liveries to disk...", "MW:SaveClick");
             lblMessage.Content = "";
             try
             {
@@ -558,8 +556,8 @@ namespace TSW3LM
             }
             catch (Exception ex)
             {
-                Log.AddLogMessage(ex.Message, "MW:Save_Click", Log.LogLevel.ERROR);
-                ShowStatusText($"ERROR: Unable to save liveries: {ex.Message}");
+                Log.Exception("Error saving game liveries!", ex, "MW:Save_Click");
+                ShowStatusText($"[ERR] Unable to save liveries: {ex.Message}");
             }
 
             Game.Load();
@@ -580,7 +578,7 @@ namespace TSW3LM
             lblMessage.Content = "";
             if (lstGameLiveries.SelectedItem == null || lstGameLiveries.SelectedIndex == -1)
             {
-                Log.AddLogMessage($"Deleting game livery {lstGameLiveries.SelectedItem}...", "MW:DeleteClick");
+                Log.Message($"Deleting game livery {lstGameLiveries.SelectedItem}...", "MW:DeleteClick");
                 lblMessage.Content = "Something went wrong, please ensure you:\n - Have a Game Livery selected\n\nif you need help, please @RagingLightning on discord or creare an issue on github";
                 return;
             }

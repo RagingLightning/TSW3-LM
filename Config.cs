@@ -19,13 +19,13 @@ namespace TSW3LM
 
             if (File.Exists(Path))
             {
-                Log.AddLogMessage("Loading Config...", "Config:<init>", Log.LogLevel.DEBUG);
+                Log.Message("Loading Config...", "Config:<init>", Log.LogLevel.DEBUG);
                 entries = JsonConvert.DeserializeObject<Entries>(File.ReadAllText(path));
-                Log.AddLogMessage("Config loaded", "Config:<init>", Log.LogLevel.DEBUG);
+                Log.Message("Config loaded", "Config:<init>", Log.LogLevel.DEBUG);
             }
             else
             {
-                Log.AddLogMessage("No Config found, initializing empty config", "Config:<init>", Log.LogLevel.DEBUG);
+                Log.Message("No Config found, initializing empty config", "Config:<init>", Log.LogLevel.DEBUG);
                 entries = new Entries();
             }
         }
@@ -72,9 +72,9 @@ namespace TSW3LM
 
         private static void Save()
         {
-            Log.AddLogMessage("Saving Config...", "Config:Save", Log.LogLevel.DEBUG);
+            Log.Message("Saving Config...", "Config:Save", Log.LogLevel.DEBUG);
             File.WriteAllText(Path, JsonConvert.SerializeObject(entries, new JsonSerializerSettings { Formatting = Formatting.Indented }));
-            Log.AddLogMessage("Config saved", "Config:Save", Log.LogLevel.DEBUG);
+            Log.Message("Config saved", "Config:Save", Log.LogLevel.DEBUG);
         }
 
         internal static void ApplyDefaults()
