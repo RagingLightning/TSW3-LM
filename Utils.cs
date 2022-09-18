@@ -129,7 +129,7 @@ namespace TSW3LM
         {
             Log.AddLogMessage("An Exception occured that was not handled within the program!", "EX", Log.LogLevel.ERROR);
             Exception ex = (Exception) e.ExceptionObject;
-            Log.LogPrintException(ex, "EX");
+            Log.PrintException(ex, "EX");
             if (e.IsTerminating)
             {
                 Log.AddLogMessage("The program is forced to terminate!", "EX", Log.LogLevel.ERROR);
@@ -163,23 +163,6 @@ namespace TSW3LM
             }
 
             return new Game.Livery(prop, true);
-        }
-
-        internal static GameLiveryInfo.Info makeInfoForTSW2(Game.Livery livery)
-        {
-            if (!livery.IsLegacy)
-                throw new ArgumentException("makeInfoForTSW2() can only be called on legacy liveries!");
-
-            try
-            {
-                string name = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "DisplayName")).Value;
-                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value;
-                return new GameLiveryInfo.Info(name, model);
-            } catch (Exception e)
-            {
-                Log.AddLogMessage("Unable to determine Name and Model from TSW2 converted livery", "makeInfoForTSW2", Log.LogLevel.ERROR);
-                return new GameLiveryInfo.Info();
-            }
         }
     }
 
@@ -238,7 +221,7 @@ namespace TSW3LM
             }
         }
 
-        public static void LogPrintException(Exception e, string stack = "-")
+        public static void PrintException(Exception e, string stack = "-")
         {
             lock (locker)
             {
