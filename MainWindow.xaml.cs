@@ -408,21 +408,29 @@ namespace TSW3LM
 
         private void btnLibDir_Click(object sender, RoutedEventArgs e)
         {
-            lblMessage.Content = "";
-            VistaFolderBrowserDialog Dialog = new VistaFolderBrowserDialog();
-            Dialog.Description = "Select a folder for all your liveries to be exported to";
-            if (Dialog.ShowDialog() == true)
+            try
             {
-                Log.AddLogMessage("Changing library path...", "MW:LibDirClick", Log.LogLevel.DEBUG);
-                Config.LibraryPath = Dialog.SelectedPath;
-                txtLibDir.Text = Dialog.SelectedPath;
-                Log.AddLogMessage($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
-            }
-            Library.Load();
-            UpdateLibraryGui();
+                lblMessage.Content = "";
+                VistaFolderBrowserDialog Dialog = new VistaFolderBrowserDialog();
+                Dialog.Description = "Select a folder for all your liveries to be exported to";
+                if (Dialog.ShowDialog() == true)
+                {
+                    Log.AddLogMessage("Changing library path...", "MW:LibDirClick", Log.LogLevel.DEBUG);
+                    Config.LibraryPath = Dialog.SelectedPath;
+                    txtLibDir.Text = Dialog.SelectedPath;
+                    Log.AddLogMessage($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
+                }
+                Library.Load();
+                UpdateLibraryGui();
 
-            if (Config.LibraryPath != "" && Config.GamePath != "")
-                ((Data)DataContext).Useable = true;
+                if (Config.LibraryPath != "" && Config.GamePath != "")
+                    ((Data)DataContext).Useable = true;
+
+            } catch (Exception ex)
+            {
+                Log.AddLogMessage($"Error while changing library folder:", "MW:LibDirClick", Log.LogLevel.ERROR);
+                Log.LogPrintException(ex, "MW:LibDirClick");
+            }
         }
 
         private void btnGameDir_Click(object sender, RoutedEventArgs e)
@@ -453,7 +461,8 @@ namespace TSW3LM
             }
             catch (Exception ex)
             {
-                Log.AddLogMessage($"Error while changing game folder: {ex.Message}", "MW:GameDirClick", Log.LogLevel.ERROR);
+                Log.AddLogMessage($"Error while changing game folder:", "MW:GameDirClick", Log.LogLevel.ERROR);
+                Log.LogPrintException(ex, "MW:GameDirClick");
             }
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
