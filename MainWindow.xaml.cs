@@ -229,19 +229,40 @@ namespace TSW3LM
             Log.Message("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
         }
 
-        internal void UpdateLibraryGui()
+        internal void UpdateLibraryGui(bool tsw3 = true)
         {
-            Log.Message("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
-            lstLibraryLiveries.Items.Clear();
-            foreach (int i in Library.Liveries.Keys)
+            if (tsw3)
             {
-                Library.Livery livery = Library.Liveries[i];
-                string Text = $"{livery.Name} for {livery.Model} <{livery.FileName}>";
-                lstLibraryLiveries.Items.Add(Text);
-                Log.Message($"Added library livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
-            }
+                tab_Tsw3.IsSelected = true;
+                Log.Message("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
+                lstLibraryLiveries.Items.Clear();
+                foreach (int i in Library.Liveries.Keys)
+                {
+                    Library.Livery livery = Library.Liveries[i];
+                    string Text = $"{livery.Name} for {livery.Model} <{livery.FileName}>";
+                    lstLibraryLiveries.Items.Add(Text);
+                    Log.Message($"Added library livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
+                }
 
-            Log.Message("Library liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                Log.Message("Library liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            }
+            else
+            {
+                tab_Tsw2.IsSelected = true;
+                Log.Message("Updating TSW2 liveries in GUI...", "MW:UpdateLiveryGui");
+                lstLibraryLiveries.Items.Clear();
+                foreach(FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
+                {
+                    Game.Livery livery = Utils.convertTSW2(File.ReadAllBytes(f.FullName));
+                    string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                    string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                    string Text = $"{name} for {model} <{f.Name}>";
+                    lstLibraryLiveries.Items.Add(Text);
+                    Log.Message($"Added TSW2 livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
+                }
+
+                Log.Message("TSW2 liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            }
         }
         private void ImportLivery(Library.Livery ll)
         {
@@ -283,6 +304,7 @@ namespace TSW3LM
         private void PrepareLiveryExport(Game.Livery gl)
         {
             Log.Message($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
+            tab_Tsw3.IsSelected = true;
             GameLiveryInfo.Get(gl.ID, () => ExportLivery(gl));
         }
 
@@ -418,7 +440,10 @@ namespace TSW3LM
             }
 
             lblMessage.Content = "";
-            ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
+            if (tab_Tsw3.IsSelected)
+                ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
+            else if (tab_Tsw2.IsSelected)
+                ImportTsw2Livery(lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]);
             UpdateGameGui();
         }
 
@@ -592,6 +617,15 @@ namespace TSW3LM
                 UpdateLiveryInfoWindow(Game.Liveries[lstGameLiveries.SelectedIndex], false);
             else
                 UpdateLiveryInfoWindow(null, false);
+        }
+
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!((Data)DataContext).Useable) return;
+            if (e.Source is TabControl)
+            {
+                UpdateLibraryGui(tab_Tsw3.IsSelected);
+            }
         }
     }
 
