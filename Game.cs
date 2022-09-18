@@ -36,7 +36,7 @@ namespace TSW3LM
                 FileStream stream = File.Open(Config.GamePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 GameData = UESerializer.Read(stream);
                 stream.Close();
-               
+
                 Log.AddLogMessage("Game Livery file fully deserialized", "G:Load", Log.LogLevel.DEBUG);
             }
             catch (FileNotFoundException e)
@@ -69,11 +69,13 @@ namespace TSW3LM
                 try
                 {
                     GvasLegacyArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "Reskins");
-                } catch (Exception)
+                }
+                catch (Exception)
                 {
                     GvasLegacyArray = new UEArrayProperty();
                     GameData.Properties.Add(GvasLegacyArray);
                     GvasLegacyArray.Name = "Reskins";
+                    GvasLegacyArray.Items = new UEProperty[] { };
                 }
 
                 int i = 0;
@@ -88,7 +90,8 @@ namespace TSW3LM
                     Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase, true));
                 }
 
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Log.AddLogMessage($"Error loading Livery: {e.Message}", "G:Load", Log.LogLevel.ERROR);
                 return $"Exception while loading liveries - Make sure:\n -  you selected the appropriate folder\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or creare an issue on github";
@@ -129,15 +132,16 @@ namespace TSW3LM
 
         internal static void Add(Livery livery)
         {
-            int index = Enumerable.Range(0, Liveries.Count+1).First(i => !Liveries.ContainsKey(i));
+            int index = Enumerable.Range(0, Liveries.Count + 1).First(i => !Liveries.ContainsKey(i));
             Liveries[index] = livery;
         }
 
         internal class Livery
         {
-            internal string ID {
+            internal string ID
+            {
                 get { return ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value; }
-                set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value = value; } 
+                set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value = value; }
             }
 
             internal bool IsLegacy { get; set; }
