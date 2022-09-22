@@ -307,7 +307,7 @@ namespace TSW3LM
             }
             try
             {
-                File.OpenWrite(path).Close();
+                File.AppendAllText(path, $"+-------------------\n+ Log file added on {DateTime.Now:MMddTHH:mm:ss.fff} at level {level}\n+-------------------\n");
                 LogPaths.Add(path, level);
                 return true;
             }
