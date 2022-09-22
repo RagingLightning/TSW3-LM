@@ -141,8 +141,12 @@ namespace TSW3LM
                     lblMessage.Content = $"ERROR WHILE LOADING GAME LIVERIES, please ensure you:\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or create an issue on github";
                 }
             }
-
-            GameLiveryInfo.Init("LiveryInfo.json");
+            if (Config.LibraryPath != "")
+            {
+                if (File.Exists("LiveryInfo.json"))
+                    File.Move("LiveryInfo.json", $"{Config.LibraryPath}\\zz_LiveryInfo.json");
+                GameLiveryInfo.Init($"{Config.LibraryPath}\\zz_LiveryInfo.json");
+            }
 
             UpdateGameGui();
 
