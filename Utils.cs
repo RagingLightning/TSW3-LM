@@ -1,22 +1,24 @@
 ﻿#nullable enable
 using GvasConverter;
+using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Windows.Forms;
+using System.Text;
 
 namespace TSW3LM
 {
     static class Utils
     {
         private static Random random = new Random();
+
+        private static UTF8Encoding Utf8 = new UTF8Encoding(false);
 
         internal static string GenerateHex(int digits)
         {
@@ -270,6 +272,104 @@ namespace TSW3LM
                 if (p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData") return Property.RESKIN_EDITOR_DATA;
             }
             return Property.UNKNOWN;
+        }
+
+        internal static Library.Livery ConvertCC(byte[] ccData)
+        {
+            byte[] data = new byte[ccData.Length - 0x10];
+            for (int j = 0; j < data.Length; j++)
+            {
+                data[j] = ccData[0x10 + j];
+            }
+
+            BinaryReader reader = new BinaryReader(new MemoryStream(data));
+            string Name = reader.ReadUEString();
+            int i = reader.ReadInt32();
+            if (i != 0) throw new FormatException($"Expected 4 byte integer '0' at offset {reader.BaseStream.Position - 4:x}, was {i:x}");
+            string s = reader.ReadUEString();
+            if (s != "EUGCType::Livery") throw new FormatException($"Expected UE String 'EUGCType::Livery' to start at offset 0x{reader.BaseStream.Position - 21:x}, was '{s}'");
+            long l = reader.ReadInt64();
+            if (l != 0) throw new FormatException($"Expected 8 byte integer '0' at offset {reader.BaseStream.Position - 8:x}, was {l:x}");
+            i = reader.ReadInt32();
+            if (l != 0) throw new FormatException($"Expected 4 byte integer '0' at offset {reader.BaseStream.Position - 4:x}, was {i:x}");
+            s = reader.ReadUEString();
+            if (s != "Blob") throw new FormatException($"Expected UEProperty Name 'Blob' to start at offset 0x{reader.BaseStream.Position - 9:x}, was '{s}'");
+            s = reader.ReadUEString();
+            if (s != "ArrayProperty") throw new FormatException($"Expected UEProperty Type 'ArrayProperty' to start at offset 0x{reader.BaseStream.Position - 18:x}, was '{s}'");
+            l = reader.ReadInt64();
+            if (l == 0) throw new FormatException($"Expected 8 byte valueLength '!= 0' at offset {reader.BaseStream.Position - 8:x}, was 0");
+            s = reader.ReadUEString();
+            if (s != "ByteProperty") throw new FormatException($"Expected UEArrayProperty ItemType 'ByteProperty' to start at offset 0x{reader.BaseStream.Position - 17:x}, was '{s}'");
+            i = reader.ReadInt32();
+            if (i == 0) throw new FormatException($"Expected 4 byte UEArrayProperty Count '!= 0' at offset {reader.BaseStream.Position - 4:x}, was 0");
+            byte b = reader.ReadByte();
+            if (b != 0) throw new FormatException($"Expected 1 byte '0' at offset {reader.BaseStream.Position - 1:x}, was {b:x}");
+
+            UEGenericStructProperty prop = new UEGenericStructProperty();
+            prop.StructType = "ReskinSave";
+            prop.Name = "Reskins";
+            prop.Type = "StructProperty";
+            prop.ValueLength = 0; //TODO: Determine
+
+            UEStringProperty idProp = new UEStringProperty { Name = "ID", Type = "NameProperty" };
+            idProp.Value = reader.ReadUEString();
+            idProp.ValueLength = Utf8.GetByteCount(idProp.Value) + 5;
+            prop.Properties.Add(idProp);
+
+            UEDateTimeStructProperty createdDateProp = new UEDateTimeStructProperty { Name = "CreatedDate", Type = "StructProperty", StructType = "DateTime", ValueLength = 8 };
+            createdDateProp.Value = DateTime.FromBinary(reader.ReadInt64());
+            prop.Properties.Add(createdDateProp);
+
+            UETextProperty displayNameProp = new UETextProperty { Name = "DisplayName", Type = "TextProperty", Id = "0" };
+            displayNameProp.Flags = reader.ReadInt64();
+            b = reader.ReadByte();
+            if (b != 0) throw new FormatException($"Expected 1 byte '0' at offset {reader.BaseStream.Position - 1:x}, was {b:x}");
+            displayNameProp.Value = reader.ReadUEString();
+            displayNameProp.ValueLength = Utf8.GetByteCount(displayNameProp.Value) + 14;
+            prop.Properties.Add(displayNameProp);
+
+            UEStringProperty baseDefinitionProp = new UEStringProperty { Name = "BaseDefinition", Type = "SoftObjectProperty" };
+            baseDefinitionProp.Value = reader.ReadUEString();
+            baseDefinitionProp.ValueLength = Utf8.GetByteCount(baseDefinitionProp.Value) + 5;
+            prop.Properties.Add(baseDefinitionProp);
+
+            i = reader.ReadInt32();
+            if (i != 0) throw new FormatException($"Expected 4 byte integer '0' at offset {reader.BaseStream.Position - 4:x}, was {i:x}");
+            i = reader.ReadInt32();
+            if (i == 0) throw new FormatException($"Expected 4 byte Count '!= 0' at offset {reader.BaseStream.Position - 4:x}, was 0");
+
+            UEProperty reskinnedElementsProp = UEProperty.Read(reader);
+            if (reskinnedElementsProp is UEGenericStructProperty)
+                prop.Properties.Add(reskinnedElementsProp);
+            else
+                throw new FormatException($"Expected to deserialize a UEGenericStructProperty, was {reskinnedElementsProp.GetType()}");
+
+            UEProperty noneProp = UEProperty.Read(reader);
+            if (noneProp is UEGenericStructProperty)
+            {
+                prop.Properties.Add(noneProp);
+                prop.Properties.Add(UEProperty.Read(reader));
+            }
+            else
+            {
+                UEGenericStructProperty reskinEditorDataProp = new UEGenericStructProperty { Name = "ReskinEditorData", Type = "StructProperty", StructType = "DTGReskinEditData" };
+                ((UEGenericStructProperty)reskinnedElementsProp).Properties.RemoveAll(p => p is UEMapProperty && p.Name == "MaterialInstances");
+                UEProperty lastUsedColoursProp = ((UEGenericStructProperty)reskinnedElementsProp).Properties.First(p => p is UEArrayProperty && p.Name == "LastUsedColours");
+                ((UEGenericStructProperty)reskinnedElementsProp).Properties.Remove(lastUsedColoursProp);
+                reskinEditorDataProp.Properties.Add(lastUsedColoursProp);
+                reskinEditorDataProp.Properties.Add(new UENoneProperty());
+
+                prop.Properties.Add(reskinEditorDataProp);
+                prop.Properties.Add(noneProp);
+            }
+            while (UEProperty.Read(reader) is UEProperty p)
+            {
+                if (p is UEGenericStructProperty && !(((UEGenericStructProperty)p).Properties[^1] is UENoneProperty))
+                    ((UEGenericStructProperty)p).Properties.Add(new UENoneProperty());
+                prop.Properties.Add(p);
+            }
+
+            return new Library.Livery($"cc_{Name}.tsw3", prop, displayNameProp.Value, baseDefinitionProp.Value.Split('.')[^1], false);
         }
 
         private enum Property
