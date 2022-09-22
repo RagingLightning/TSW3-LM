@@ -127,11 +127,12 @@ namespace TSW3LM
 
         internal static void ExceptionHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            Log.Exception("An Exception occured that was not handled within the program!", (Exception) e.ExceptionObject, "EX");
+            Log.Exception("An Exception occured that was not handled within the program!", (Exception)e.ExceptionObject, "EX");
             if (e.IsTerminating)
             {
                 Log.Message("The program is forced to terminate!", "EX", Log.LogLevel.ERROR);
-            } else
+            }
+            else
             {
                 Log.Message("The program can continue, correct behaviour is not guaranteed though!", "EX", Log.LogLevel.ERROR);
                 MainWindow.INSTANCE.ShowStatusText("[ERR] Unhandled exception, please restart the program asap!");
@@ -139,15 +140,15 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        internal static Game.Livery convertTSW2(byte[] tsw2Data)
+        internal static Game.Livery ConvertTSW2(byte[] tsw2Data)
         {
-            byte[] data = new byte[tsw2Data.Length+9];
+            byte[] data = new byte[tsw2Data.Length + 9];
             for (int i = 1; i <= tsw2Data.Length; i++)
             {
                 if (i == tsw2Data.Length)
-                    data[i-1] = 0;
+                    data[i - 1] = 0;
                 else
-                    data[i-1] = tsw2Data[i];
+                    data[i - 1] = tsw2Data[i];
             }
             data[^9] = 5;
             data[^8] = 0;
@@ -165,12 +166,118 @@ namespace TSW3LM
             prop.Name = "Reskins";
             prop.Type = "StructProperty";
             prop.ValueLength = 0; //TODO: Determine
-            while(UEProperty.Read(reader) is UEProperty p)
+            while (UEProperty.Read(reader) is UEProperty p)
             {
                 prop.Properties.Add(p);
             }
 
+            ValidateTsw2Import(prop);
+
             return new Game.Livery(prop, false);
+        }
+
+        internal static void ValidateTsw2Import(UEGenericStructProperty prop)
+        {
+            //ID
+            prop.Properties.First(p => p is UEStringProperty && p.Type == "NameProperty" && p.Name == "ID" && ((UEStringProperty)p).Value.StartsWith("L_"));
+            //CreatedDate
+            prop.Properties.First(p => p is UEDateTimeStructProperty && p.Name == "CreatedDate");
+            //DisplayName
+            prop.Properties.First(p => p is UETextProperty && p.Name == "DisplayName");
+            //BaseDefinition
+            prop.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition" && p.Type == "SoftObjectProperty");
+            //ReskinnedElements
+            UEArrayProperty reskinnedElements = ((UEArrayProperty)prop.Properties.First(p => p is UEArrayProperty && p.Name == "ReskinnedElements" && ((UEArrayProperty)p).ItemType == "StructProperty"));
+            foreach (UEGenericStructProperty t in reskinnedElements.Items.ToList())
+            {
+                if (t.Name != "ReskinnedElements" || t.StructType != "DTGReskinEntry")
+                {
+                    if (IdentifyMisplacedProperty(t) == Property.UNKNOWN) throw new FormatException($"ReskinnedElements contains foreign property {t.Name} (Type: {t.GetType()})");
+                    List<UEProperty> tmp = reskinnedElements.Items.ToList();
+                    tmp.Remove(t);
+                    reskinnedElements.Items = tmp.ToArray();
+                    prop.Properties.Add(t);
+                    continue;
+                }
+                if (t.Properties.Count == 0)
+                {
+                    reskinnedElements.Count--;
+                    List<UEProperty> tmp = reskinnedElements.Items.ToList();
+                    tmp.Remove(t);
+                    reskinnedElements.Items = tmp.ToArray();
+                    continue;
+                }
+                //contains only "Channels" and UENone
+                foreach (UEProperty p2 in t.Properties.ToList())
+                {
+                    if (p2 is UENoneProperty || p2.Name == "Channels") continue;
+                    if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"ReskinnedElements entry contains foreign property {p2.Name} (Type: {p2.GetType()})");
+                    t.Properties.Remove(p2);
+                    prop.Properties.Add(p2);
+                }
+                //last is UENone
+                if (!(t.Properties[t.Properties.Count - 1] is UENoneProperty)) t.Properties.Add(new UENoneProperty());
+            }
+            //ReskinEditorData
+            UEGenericStructProperty prp = (UEGenericStructProperty)prop.Properties.First(p => p is UEGenericStructProperty && p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData");
+            foreach (UEProperty t in prp.Properties)
+            {
+                if (t is UEArrayProperty && t.Name == "LastUsedColours" && ((UEArrayProperty)t).ItemType == "StructProperty")
+                {
+                    foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
+                    {
+                        if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
+                        List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
+                        tmp.Remove(p2);
+                        ((UEArrayProperty)t).Items = tmp.ToArray();
+                        prop.Properties.Add(p2);
+                    }
+                }
+                else if (!(t is UENoneProperty)) throw new FormatException($"ReskinEditorData contains foreign property {t.Name} (Type: {t.GetType()})");
+            }
+            //last is UENone
+            if (!(prp.Properties[^1] is UENoneProperty)) prp.Properties.Add(new UENoneProperty());
+
+            if (!(prop.Properties[^1] is UENoneProperty)) prop.Properties.Add(new UENoneProperty());
+
+            if (prop.Properties.Count != 7) throw new FormatException($"Number of properties is incorrect (expected: 7, actual: {prop.Properties.Count})");
+        }
+
+        private static Property IdentifyMisplacedProperty(UEProperty p)
+        {
+            if (p is UEStringProperty)
+            {
+                if (p.Name == "ID" && p.Type == "NameProperty" && ((UEStringProperty)p).Value.StartsWith("L_")) return Property.ID;
+                if (p.Name == "BaseDefinition" && p.Type == "SoftObjectProperty") return Property.BASE_DEFINITION;
+            }
+            else if (p is UEDateTimeStructProperty)
+            {
+                if (p.Name == "CreatedDate") return Property.CREATED_DATE;
+            }
+            else if (p is UETextProperty)
+            {
+                if (p.Name == "DisplayName") return Property.DISPLAY_NAME;
+            }
+            else if (p is UEArrayProperty)
+            {
+                if (p.Name == "ReskinnedElements" && ((UEArrayProperty)p).ItemType == "StructProperty") return Property.RESKINNED_ELEMENTS;
+            }
+            else if (p is UEGenericStructProperty)
+            {
+                if (p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData") return Property.RESKIN_EDITOR_DATA;
+            }
+            return Property.UNKNOWN;
+        }
+
+        private enum Property
+        {
+            UNKNOWN = 0,
+            ID = 1,
+            CREATED_DATE = 2,
+            DISPLAY_NAME = 3,
+            BASE_DEFINITION = 4,
+            RESKINNED_ELEMENTS = 5,
+            RESKIN_EDITOR_DATA = 6
         }
     }
 
