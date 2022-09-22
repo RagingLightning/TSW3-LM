@@ -21,7 +21,7 @@ namespace TSW3LM
     {
         internal static MainWindow INSTANCE;
 
-        private const string VERSION = "0.2.0a";
+        private const string VERSION = "0.2.0b";
 
         private Thread InfoCollectorThread = new Thread(GameLiveryInfo.AutoRefresh);
 
@@ -37,6 +37,8 @@ namespace TSW3LM
             AttachConsole(-1);
 
             Config.Init("TSW3LM.json");
+            if (!int.TryParse(VERSION.Split('.')[^1], out int _))
+                Config.DevUpdates = true;
 
             Log.AddLogFile("TSW3LM.log", Log.LogLevel.INFO);
             if (Environment.GetCommandLineArgs().Contains("-debug"))
