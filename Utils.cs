@@ -288,7 +288,7 @@ namespace TSW3LM
     {
         private static readonly object locker = new object();
 
-        private static Dictionary<string, LogLevel> LogPaths = new Dictionary<string, LogLevel>();
+        private static readonly Dictionary<string, LogLevel> LogPaths = new Dictionary<string, LogLevel>();
 
         /// <summary>The highest LogLevel shown on the Console</summary>
         public static LogLevel ConsoleLevel = LogLevel.INFO;
@@ -307,7 +307,7 @@ namespace TSW3LM
             }
             try
             {
-                File.OpenWrite(path).Close();
+                File.AppendAllText(path, $"+-------------------\n+ Log file added on {DateTime.Now:MMddTHH:mm:ss.fff} at level {level}\n+-------------------\n");
                 LogPaths.Add(path, level);
                 return true;
             }
