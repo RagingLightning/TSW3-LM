@@ -143,7 +143,7 @@ namespace TSW3LM
 
         internal static Game.Livery ConvertTSW2(byte[] tsw2Data, bool catchFormatError)
         {
-            byte[] data = new byte[tsw2Data.Length + 9];
+            byte[] data = new byte[tsw2Data.Length];
             for (int i = 1; i <= tsw2Data.Length; i++)
             {
                 if (i == tsw2Data.Length)
@@ -151,15 +151,6 @@ namespace TSW3LM
                 else
                     data[i - 1] = tsw2Data[i];
             }
-            data[^9] = 5;
-            data[^8] = 0;
-            data[^7] = 0;
-            data[^6] = 0;
-            data[^5] = (byte)'N';
-            data[^4] = (byte)'o';
-            data[^3] = (byte)'n';
-            data[^2] = (byte)'e';
-            data[^1] = 0;
 
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
             UEGenericStructProperty prop = new UEGenericStructProperty();
