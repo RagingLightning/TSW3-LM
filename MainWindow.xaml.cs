@@ -250,12 +250,20 @@ namespace TSW3LM
                 lstLibraryLiveries.Items.Clear();
                 foreach(FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
                 {
-                    Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(f.FullName));
-                    string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
-                    string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                    string Text = $"{name} for {model} <{f.Name}>";
-                    lstLibraryLiveries.Items.Add(Text);
-                    Log.Message($"Added TSW2 livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
+                    try
+                    {
+                        Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(f.FullName), true);
+                        string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                        string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                        string Text = $"{name} for {model} <{f.Name}>";
+                        lstLibraryLiveries.Items.Add(Text);
+                        Log.Message($"Added TSW2 livery {Text}", "MW:UpdateLibraryGui", Log.LogLevel.DEBUG);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Exception("Error loading TSW2 livery!", e, "MW:ImportTsw2Livery");
+                        lblMessage.Content = $"[ERR] Error while importing TSW2 livery: {e.Message}";
+                    }
                 }
 
                 Log.Message("TSW2 liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
