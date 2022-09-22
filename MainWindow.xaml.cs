@@ -295,7 +295,7 @@ namespace TSW3LM
             Log.Message($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
             try
             {
-                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(fileName));
+                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(fileName), false);
                 string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
                 string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
                 string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
