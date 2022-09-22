@@ -92,7 +92,7 @@ namespace TSW3LM
                 try
                 {
                     Log.AddLogMessage("Checking for updates...", "MW:<init>");
-                    string? newVersion = Utils.checkUpdate(VERSION);
+                    string? newVersion = Utils.CheckUpdate(VERSION);
                     if (newVersion != null)
                         new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
                 }
@@ -108,7 +108,7 @@ namespace TSW3LM
                 try
                 {
                     Log.AddLogMessage("Checking for dev updates...", "MW::<init>");
-                    string? newVersion = Utils.checkUpdate(VERSION);
+                    string? newVersion = Utils.CheckDevUpdate(VERSION);
                     if (newVersion != null)
                         new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
                 }

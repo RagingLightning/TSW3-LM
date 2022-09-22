@@ -26,7 +26,7 @@ namespace TSW3LM
             return result + random.Next(16).ToString("X");
         }
 
-        internal static string? checkUpdate(string version)
+        internal static string? CheckUpdate(string version)
         {
             WebRequest UpdateRequest = WebRequest.Create("https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat");
             string UpdateResponse = new StreamReader(UpdateRequest.GetResponse().GetResponseStream()).ReadToEnd();
