@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using GvasConverter;
-using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -390,6 +389,28 @@ namespace TSW3LM
             BASE_DEFINITION = 4,
             RESKINNED_ELEMENTS = 5,
             RESKIN_EDITOR_DATA = 6
+        }
+
+        public static string ReadUEString(this BinaryReader reader)
+        {
+#pragma warning disable CS8603 // Mögliche Nullverweisrückgabe.
+            //if (reader.PeekChar() < 0)
+            //    return null;
+
+            var length = reader.ReadInt32();
+            if (length == 0)
+                return null;
+
+            if (length == 1)
+                return "";
+
+            if (length < 0)
+                length = -2 * length;
+
+            var valueBytes = reader.ReadBytes(length);
+            return Utf8.GetString(valueBytes, 0, valueBytes.Length - 1);
+
+#pragma warning restore CS8603 // Mögliche Nullverweisrückgabe.
         }
 
         internal static long DetermineValueLength(UEProperty prop, CVL calc)
