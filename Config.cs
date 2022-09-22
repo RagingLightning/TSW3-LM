@@ -1,9 +1,6 @@
 ﻿#nullable disable warnings
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Windows.Media.Animation;
 
 namespace TSW3LM
 {
@@ -39,6 +36,12 @@ namespace TSW3LM
         {
             get { return entries.GamePath; }
             set { entries.GamePath = value; if (!entries.SkipAutosave) Save(); }
+        }
+
+        public static string CCPath
+        {
+            get { return entries.CCPath; }
+            set { entries.CCPath = value; if (!entries.SkipAutosave) Save(); }
         }
 
         public static string LibraryPath
@@ -87,6 +90,7 @@ namespace TSW3LM
         {
             public bool SkipAutosave = false;
             public string GamePath = "";
+            public string CCPath = "";
             public string LibraryPath = "";
             public bool NoUpdate = false;
             public bool DevUpdates = false;
@@ -97,6 +101,7 @@ namespace TSW3LM
             {
                 SkipAutosave = false;
                 GamePath = "";
+                CCPath = "";
                 LibraryPath = "";
                 NoUpdate = false;
                 DevUpdates = false;
