@@ -110,7 +110,7 @@ namespace TSW3LM
             {
                 try
                 {
-                    Log.Message("Checking for dev updates...", "MW::<init>");
+                    Log.AddLogMessage("Checking for dev updates...", "MW::<init>");
                     string? newVersion = Utils.CheckDevUpdate(VERSION);
                     if (newVersion != null)
                         new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
@@ -456,25 +456,9 @@ namespace TSW3LM
             UpdateGameGui();
         }
 
-        private void btnTsw2Import_Click(object sender, RoutedEventArgs e)
+        private void btnJExport_Click(object sender, RoutedEventArgs e)     //Reuse for TSW2 import maybe?
         {
-            try
-            {
-                lblMessage.Content = "";
-                OpenFileDialog Dialog = new OpenFileDialog();
-                Dialog.Filter = "TSW2 Livery (*.tsw2liv)|*.tsw2liv";
-                Dialog.DefaultExt = "*.tsw2liv";
-                Dialog.InitialDirectory = Config.LibraryPath;
-                if (Dialog.ShowDialog() == true)
-                {
-                    ImportTsw2Livery(Dialog.FileName);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Log.Exception($"Error while changing library folder!", ex, "MW:LibDirClick");
-            }
+            throw new NotImplementedException();
         }
 
         private void btnInfo_Click(object sender, RoutedEventArgs e)
