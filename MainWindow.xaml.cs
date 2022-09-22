@@ -453,7 +453,7 @@ namespace TSW3LM
             if (tab_Tsw3.IsSelected)
                 ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
             else if (tab_Tsw2.IsSelected)
-                ImportTsw2Livery(lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]);
+                ImportTsw2Livery($"{Config.LibraryPath}\\{lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]}");
             UpdateGameGui();
         }
 
