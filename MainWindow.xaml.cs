@@ -211,30 +211,56 @@ namespace TSW3LM
             Application.Current.Shutdown();
         }
 
-        internal void UpdateGameGui()
+        internal void UpdateGameGui(bool cc = false)
         {
-            Log.Message("Updating game liveries in GUI...", "MW:UpdateGameGui");
-            lstGameLiveries.Items.Clear();
-            for (int i = 0; i < Config.MaxGameLiveries; i++)
+            if (cc)
             {
-                if (!Game.Liveries.ContainsKey(i))
-                    lstGameLiveries.Items.Add($"({i+1}) <empty>");
-                else
+                if (Config.CCPath == "" && Config.GamePath != "")
                 {
-                    string Id = Game.Liveries[i].ID;
-                    GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
-                    string Text = Game.Liveries[i].Compressed ? $"({i + 1}) {Info.Name} for {Info.Model}" : $"({i+1}) [RAW] {Info.Name} for {Info.Model}";
-                    lstGameLiveries.Items.Add(Text);
-                    Log.Message($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                    if (Directory.Exists($"{Config.GamePath.Replace("\\SaveGames\\UGCLiveries_0.sav", "")}\\PersistentDownloadDir"))
+                        Config.CCPath = $"{Config.GamePath.Replace("\\SaveGames\\UGCLiveries_0.sav", "")}\\PersistentDownloadDir\\UGC\\0";
+                    else
+                    {
+                        tab_Game.IsSelected = true;
+                        ShowStatusText("You don't have any CC-Liveries");
+                        return;
+                    }
                 }
+                ((Data)DataContext).ImportActive = false;
+                tab_CC.IsSelected = true;
+
+
             }
-            Log.Message("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            else
+            {
+                ((Data)DataContext).ImportActive = true;
+                tab_Game.IsSelected = true;
+
+                Log.Message("Updating game liveries in GUI...", "MW:UpdateGameGui");
+                lstGameLiveries.Items.Clear();
+                for (int i = 0; i < Config.MaxGameLiveries; i++)
+                {
+                    if (!Game.Liveries.ContainsKey(i))
+                        lstGameLiveries.Items.Add($"({i + 1}) <empty>");
+                    else
+                    {
+                        string Id = Game.Liveries[i].ID;
+                        GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
+                        string Text = Game.Liveries[i].Compressed ? $"({i + 1}) {Info.Name} for {Info.Model}" : $"({i + 1}) [RAW] {Info.Name} for {Info.Model}";
+                        lstGameLiveries.Items.Add(Text);
+                        Log.Message($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                    }
+                }
+                Log.Message("Game liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+            }
         }
 
         internal void UpdateLibraryGui(bool tsw3 = true)
         {
             if (tsw3)
             {
+                ((Data)DataContext).ExportActive = true;
+
                 tab_Tsw3.IsSelected = true;
                 Log.Message("Updating library liveries in GUI...", "MW:UpdateLibraryGui");
                 lstLibraryLiveries.Items.Clear();
@@ -250,6 +276,8 @@ namespace TSW3LM
             }
             else
             {
+                ((Data)DataContext).ExportActive = false;
+
                 tab_Tsw2.IsSelected = true;
                 Log.Message("Updating TSW2 liveries in GUI...", "MW:UpdateLiveryGui");
                 lstLibraryLiveries.Items.Clear();
@@ -629,12 +657,21 @@ namespace TSW3LM
                 UpdateLiveryInfoWindow(null, false);
         }
 
-        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LibraryTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!((Data)DataContext).Useable) return;
             if (e.Source is TabControl)
             {
                 UpdateLibraryGui(tab_Tsw3.IsSelected);
+            }
+        }
+
+        private void GameTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!((Data)DataContext).Useable) return;
+            if (e.Source is TabControl)
+            {
+                UpdateGameGui(tab_CC.IsSelected);
             }
         }
     }
@@ -645,7 +682,21 @@ namespace TSW3LM
         public bool Useable
         {
             get { return _useable; }
-            set { _useable = value; OnPropertyChanged("Useable"); }
+            set { _useable = value; OnPropertyChanged("Useable"); OnPropertyChanged("ExportActive"); OnPropertyChanged("ImportActive"); }
+        }
+
+        public bool _exportActive = true;
+        public bool ExportActive
+        {
+            get { return _exportActive && _useable; }
+            set { _exportActive = value; OnPropertyChanged("ExportActive"); }
+        }
+
+        public bool _importActive = true;
+        public bool ImportActive
+        {
+            get { return _importActive && _useable; }
+            set { _importActive = value; OnPropertyChanged("ImportActive"); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
