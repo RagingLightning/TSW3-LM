@@ -228,7 +228,7 @@ namespace TSW3LM
                 ((Data)DataContext).ImportActive = false;
                 tab_CC.IsSelected = true;
 
-                Log.Message("Updating creators club liveries in GUI...", "MW:UpdateGameGui");
+                Log.Message("Updating CC liveries in GUI...", "MW:UpdateGameGui");
                 lstGameLiveries.Items.Clear();
                 foreach (FileInfo info in new DirectoryInfo(Config.CCPath).GetFiles("*.ugc"))
                 {
@@ -237,7 +237,7 @@ namespace TSW3LM
                     lstGameLiveries.Items.Add(Text);
                     Log.Message($"Added CC livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
                 }
-                Log.Message("Creators club liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                Log.Message("CC liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
 
             }
             else
@@ -332,13 +332,12 @@ namespace TSW3LM
             Log.Message($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
             try
             {
-                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(fileName), false);
+                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes($"{Config.LibraryPath}\\{fileName}"), false);
                 string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
                 string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
                 string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
                 livery.ID = newId;
                 Game.Add(livery);
-                UpdateGameGui();
                 ShowStatusText("*.tsw2liv successfully imported");
             }
             catch (Exception e)
@@ -385,8 +384,23 @@ namespace TSW3LM
 
             Log.Message($"Livery successfully exported (FileName: {ll.FileName})", "MW:ExportLivery", Log.LogLevel.DEBUG);
             ShowStatusText("Livery successfully exported");
+        }
 
-            UpdateLibraryGui();
+        private void ExportCCLivery(string fileName)
+        {
+            Log.Message($"Exporting CC livery from {fileName}", "MW:ExportCCLivery");
+            try
+            {
+                Library.Livery livery = Utils.ConvertCC(File.ReadAllBytes($"{Config.CCPath}\\{fileName}"));
+                Library.Add(livery);
+                Library.Save(livery);
+                ShowStatusText("CC livery successfully exported");
+            }
+            catch (Exception e)
+            {
+                Log.Exception("Error exporting CC livery!", e, "MW:ExportCCLivery");
+                lblMessage.Content = $"[ERR] Error while exporting CC livery: {e.Message}";
+            }
         }
 
         private void UpdateLiveryInfoWindow(Game.Livery livery, bool show)
@@ -474,7 +488,10 @@ namespace TSW3LM
             }
 
             lblMessage.Content = "";
-            PrepareLiveryExport(Game.Liveries[lstGameLiveries.SelectedIndex]);
+            if (tab_Game.IsSelected)
+                PrepareLiveryExport(Game.Liveries[lstGameLiveries.SelectedIndex]);
+            else if (tab_CC.IsSelected)
+                ExportCCLivery(lstGameLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]);
             UpdateLibraryGui();
         }
 
@@ -490,7 +507,7 @@ namespace TSW3LM
             if (tab_Tsw3.IsSelected)
                 ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
             else if (tab_Tsw2.IsSelected)
-                ImportTsw2Livery($"{Config.LibraryPath}\\{lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]}");
+                ImportTsw2Livery(lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]);
             UpdateGameGui();
         }
 
