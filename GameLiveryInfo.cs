@@ -121,6 +121,7 @@ namespace TSW3LM
                         int length = liveryId.Length - 2;
                         liveryId = "L_" + Utils.GenerateHex(length);
                     } while (gameIds.Contains(liveryId));
+                    Data.Add(liveryId, new Info());
                     Log.Message($"New Livery Id: {liveryId}", "LI:SetInfo", Log.LogLevel.DEBUG);
                 }
             }
