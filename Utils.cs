@@ -4,6 +4,7 @@ using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -140,7 +141,7 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        internal static Game.Livery ConvertTSW2(byte[] tsw2Data)
+        internal static Game.Livery ConvertTSW2(byte[] tsw2Data, bool catchFormatError)
         {
             byte[] data = new byte[tsw2Data.Length + 9];
             for (int i = 1; i <= tsw2Data.Length; i++)
@@ -170,8 +171,19 @@ namespace TSW3LM
             {
                 prop.Properties.Add(p);
             }
-
-            ValidateTsw2Import(prop);
+            try
+            {
+                ValidateTsw2Import(prop);
+            }
+            catch (Exception e)
+            {
+                if (!catchFormatError)
+                    throw e;
+                else
+                {
+                    Log.Exception("Error converting TSW2 livery", e, "U:ConvertTSW2", Log.LogLevel.WARNING);
+                }
+            }
 
             return new Game.Livery(prop, false);
         }
