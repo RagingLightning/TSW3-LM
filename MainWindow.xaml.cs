@@ -229,6 +229,16 @@ namespace TSW3LM
                 ((Data)DataContext).ImportActive = false;
                 tab_CC.IsSelected = true;
 
+                Log.Message("Updating creators club liveries in GUI...", "MW:UpdateGameGui");
+                lstGameLiveries.Items.Clear();
+                foreach (FileInfo info in new DirectoryInfo(Config.CCPath).GetFiles("*.ugc"))
+                {
+                    Library.Livery livery = Utils.ConvertCC(File.ReadAllBytes(info.FullName));
+                    string Text = $"{livery.Name} for {livery.Model} <{info.Name}>";
+                    lstGameLiveries.Items.Add(Text);
+                    Log.Message($"Added CC livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                }
+                Log.Message("Creators club liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
 
             }
             else
@@ -281,7 +291,7 @@ namespace TSW3LM
                 tab_Tsw2.IsSelected = true;
                 Log.Message("Updating TSW2 liveries in GUI...", "MW:UpdateLiveryGui");
                 lstLibraryLiveries.Items.Clear();
-                foreach(FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
+                foreach (FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
                 {
                     try
                     {
