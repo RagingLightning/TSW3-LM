@@ -43,7 +43,8 @@ namespace TSW3LM
                 Log.AddLogFile("TSW3LM_debug.log", Log.LogLevel.DEBUG);
                 Log.ConsoleLevel = Log.LogLevel.DEBUG;
             }
-            Log.AddLogMessage($"Command line: {Environment.CommandLine}", "MW:<init>", Log.LogLevel.DEBUG);
+            Log.Message($"+ Starting TSW3LM Version {VERSION}", "MW:<init>");
+            Log.Message($"Command line: TSW3LM.exe {Environment.GetCommandLineArgs().Skip(1).Aggregate((a, b) => $"{a} {b}")}", "MW:<init>");
 
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(Utils.ExceptionHandler);
 
