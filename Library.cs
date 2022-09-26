@@ -40,35 +40,6 @@ namespace TSW3LM
                 }
             }
 
-            /*Log.AddLogMessage($"Loading TSW2LM-Liveries...", "L:Load", Log.LogLevel.DEBUG);
-            foreach (FileInfo file in Info.GetFiles("*.tsw2liv"))
-            {
-                try
-                {
-                    byte[] data = File.ReadAllBytes(file.FullName);
-                    for (int i = 0; i < data.Length; i++)
-                    {
-                        if (i + 1 == data.Length)
-                            data[i] = 0;
-                        else
-                            data[i] = data[i+1];
-                    }
-                    File.WriteAllBytes(file.FullName + ".tmp", data);
-
-                    List<UEProperty> properties = new List<UEProperty>();
-
-                    BinaryReader reader = new BinaryReader(File.Open(file.FullName + ".tmp", FileMode.Open, FileAccess.Read, FileShare.Read), Encoding.ASCII, true);
-                    while (UEProperty.Read(reader) is UEProperty prop) properties.Add(prop);
-
-                    Livery livery = new Livery(file.FullName, properties);
-
-                }
-                catch (Exception e)
-                {
-                    Log.AddLogMessage($"Error while loading livery {file.Name}: {e.Message}", "L:Load", Log.LogLevel.WARNING);
-                }
-            }*/
-
             Log.Message($"Library fully loaded", "L:Load", Log.LogLevel.DEBUG);
         }
 

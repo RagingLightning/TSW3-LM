@@ -54,12 +54,15 @@ namespace TSW3LM
             try
             {
                 if (!GameData.Properties.Any(p => p is UEArrayProperty))
-                {
                     Log.Message("No livery exists in the game...", "G:Load", Log.LogLevel.WARNING);
-                    GvasZipArray = new UEArrayProperty();
-                    return null;
+                try
+                {
+                    GvasZipArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
                 }
-                GvasZipArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
+                catch (Exception)
+                {
+                    GvasZipArray = new UEArrayProperty { Name = "CompressedReskins", Type = "ArrayProperty", ItemType = "StructProperty", Items = new UEProperty[] { } };
+                }
 
                 try
                 {
@@ -67,12 +70,7 @@ namespace TSW3LM
                 }
                 catch (Exception)
                 {
-                    GvasRawArray = new UEArrayProperty();
-                    GameData.Properties.Add(GvasRawArray);
-                    GvasRawArray.Name = "Reskins";
-                    GvasRawArray.Type = "ArrayProperty";
-                    GvasRawArray.ItemType = "StructProperty";
-                    GvasRawArray.Items = new UEProperty[] { };
+                    GvasRawArray = new UEArrayProperty { Name = "Reskins", Type = "ArrayProperty", ItemType = "StructProperty", Items = new UEProperty[] { } };
                 }
 
                 int i = 0;
@@ -104,11 +102,14 @@ namespace TSW3LM
             List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Compressed).Select(p => p.GvasBaseProperty).ToList();
             List<UEGenericStructProperty> raw = Liveries.Values.Where(p => !p.Compressed).Select(p => p.GvasBaseProperty).ToList();
 
-            GvasZipArray.Count = zip.Count;
-            GvasZipArray.Items = zip.ToArray();
-
             GameData.Properties.Clear();
-            GameData.Properties.Add(GvasZipArray);
+
+            if (zip.Count > 0)
+            {
+                GvasZipArray.Count = zip.Count;
+                GvasZipArray.Items = zip.ToArray();
+                GameData.Properties.Add(GvasZipArray);
+            }
 
             if (raw.Count > 0)
             {
@@ -119,7 +120,8 @@ namespace TSW3LM
 
             GameData.Properties.Add(new UENoneProperty());
 
-            File.WriteAllText($"{Config.LibraryPath}\\gvas.json", JsonConvert.SerializeObject(GameData));
+            if (!int.TryParse(MainWindow.VERSION.Split('.')[^1], out int _))    //If in dev-version
+                File.WriteAllText($"{Config.LibraryPath}\\backup\\zz_gvas.json", JsonConvert.SerializeObject(GameData, Formatting.Indented));
 
             byte[] Contents = File.ReadAllBytes(Config.GamePath);
             Directory.CreateDirectory($"{Config.LibraryPath}\\backup");

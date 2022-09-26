@@ -282,7 +282,7 @@ namespace TSW3LM
             }
 
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
-            string Name = reader.ReadUEString();
+            string Name = reader.ReadUEString().Trim();
             int i = reader.ReadInt32();
             if (i != 0) throw new FormatException($"Expected 4 byte integer '0' at offset {reader.BaseStream.Position - 4:x}, was {i:x}");
             string s = reader.ReadUEString();
@@ -368,7 +368,7 @@ namespace TSW3LM
                 prop.Properties.Add(p);
             }
 
-            return new Library.Livery($"cc_{Name}.tsw3", prop, displayNameProp.Value, baseDefinitionProp.Value.Split('.')[^1], false);
+            return new Library.Livery($"cc_{Name}.tsw3", prop, Name, baseDefinitionProp.Value.Split('.')[^1].Replace("RF_", ""), false);
         }
 
         private enum Property
@@ -395,11 +395,16 @@ namespace TSW3LM
             if (length == 1)
                 return "";
 
+            byte[] valueBytes;
             if (length < 0)
-                length = -2 * length;
+            {
+                valueBytes = reader.ReadBytes(-2*length).Where(b => b != 0).ToArray();
+            } else
+            {
+                valueBytes = reader.ReadBytes(length);
+            }
 
-            var valueBytes = reader.ReadBytes(length);
-            return Utf8.GetString(valueBytes, 0, valueBytes.Length - 1);
+            return Enumerable.Range(0, valueBytes.Length-1).Select(i => char.ConvertFromUtf32(valueBytes[i])).Aggregate((a, b) => $"{a}{b}");
 
 #pragma warning restore CS8603 // Mögliche Nullverweisrückgabe.
         }
@@ -507,6 +512,8 @@ namespace TSW3LM
                 livery.Name = jo["Name"].ToString();
                 livery.Model = jo["Model"].ToString();
                 livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
+                if (jo["Compressed"] != null)   //Check for TSW3 file before Version 0.2.0
+                    livery.Compressed = jo["Compressed"].ToString() == "true";
                 return livery;
 #pragma warning restore CS8602,CS8600
             }

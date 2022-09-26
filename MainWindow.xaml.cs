@@ -21,7 +21,7 @@ namespace TSW3LM
     {
         internal static MainWindow INSTANCE;
 
-        private const string VERSION = "0.2.1";
+        internal const string VERSION = "0.2.1";
 
         private Thread InfoCollectorThread = new Thread(GameLiveryInfo.AutoRefresh);
 
@@ -124,9 +124,19 @@ namespace TSW3LM
 
             InitializeComponent();
 
+            LateInit();
+
+            LiveryInfoWindow.INSTANCE = new LiveryInfoWindow();
+
+            //InfoCollectorThread.SetApartmentState(ApartmentState.STA);
+            //InfoCollectorThread.Start();
+        }
+
+        private void LateInit()
+        {
             if (Config.GamePath != "")
             {
-                Log.Message("Loading GamePath Data...", "MW::<init>");
+                Log.Message("Loading GamePath Data...", "MW:LateInit");
                 if (File.Exists(Config.GamePath))
                 {
                     txtGameDir.Text = Config.GamePath;
@@ -145,8 +155,10 @@ namespace TSW3LM
                     lblMessage.Content = $"ERROR WHILE LOADING GAME LIVERIES, please ensure you:\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or create an issue on github";
                 }
             }
+
             if (Config.LibraryPath != "")
             {
+                Log.Message("Initializing GameLiveryInfo...", "MW:LateInit");
                 if (File.Exists("LiveryInfo.json"))
                     File.Move("LiveryInfo.json", $"{Config.LibraryPath}\\zz_LiveryInfo.json");
                 GameLiveryInfo.Init($"{Config.LibraryPath}\\zz_LiveryInfo.json");
@@ -156,6 +168,7 @@ namespace TSW3LM
 
             if (Config.LibraryPath != "")
             {
+                Log.Message("Loading LibraryPath Data...", "MW:LateInit");
                 txtLibDir.Text = Config.LibraryPath;
                 Library.Load();
             }
@@ -164,12 +177,6 @@ namespace TSW3LM
 
             if (Config.LibraryPath != "" && Config.GamePath != "")
                 ((Data)DataContext).Useable = true;
-
-            LiveryInfoWindow.INSTANCE = new LiveryInfoWindow();
-
-            //InfoCollectorThread.SetApartmentState(ApartmentState.STA);
-            //InfoCollectorThread.Start();
-
         }
 
         private void Close(object sender, CancelEventArgs e)
@@ -553,11 +560,8 @@ namespace TSW3LM
                     txtLibDir.Text = Dialog.SelectedPath;
                     Log.Message($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
                 }
-                Library.Load();
-                UpdateLibraryGui();
 
-                if (Config.LibraryPath != "" && Config.GamePath != "")
-                    ((Data)DataContext).Useable = true;
+                LateInit();
 
             }
             catch (Exception ex)
@@ -589,8 +593,8 @@ namespace TSW3LM
                     txtGameDir.Text = Dialog.SelectedPath;
                     Log.Message($"Changed game path to {Config.GamePath}", "MW::GameDirClick");
                 }
-                Game.Load();
-                UpdateGameGui();
+
+                LateInit();
             }
             catch (Exception ex)
             {
