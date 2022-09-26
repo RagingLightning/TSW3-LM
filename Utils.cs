@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using GvasConverter;
+using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -157,7 +158,6 @@ namespace TSW3LM
             prop.StructType = "ReskinSave";
             prop.Name = "Reskins";
             prop.Type = "StructProperty";
-            prop.ValueLength = 0; //TODO: Determine
             while (UEProperty.Read(reader) is UEProperty p)
             {
                 prop.Properties.Add(p);
@@ -244,6 +244,16 @@ namespace TSW3LM
             if (!(prop.Properties[^1] is UENoneProperty)) prop.Properties.Add(new UENoneProperty());
 
             if (prop.Properties.Count != 7) throw new FormatException($"Number of properties is incorrect (expected: 7, actual: {prop.Properties.Count})");
+
+            prop.ValueLength = DetermineValueLength(prop, r =>
+            {
+                r.ReadUEString();   //name
+                r.ReadUEString();   //type
+                r.ReadInt64();      //valueLength
+                r.ReadBytes(16);    //id
+                r.ReadByte();       //terminator
+                return r.BaseStream.Length - r.BaseStream.Position;
+            });
         }
 
         private static Property IdentifyMisplacedProperty(UEProperty p)
@@ -282,6 +292,23 @@ namespace TSW3LM
             RESKINNED_ELEMENTS = 5,
             RESKIN_EDITOR_DATA = 6
         }
+
+        internal static long DetermineValueLength(UEProperty prop, CVL calc)
+        {
+            FileStream f = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm.tmp", FileMode.Create, FileAccess.Write);
+            BinaryWriter w = new BinaryWriter(f);
+            prop.Serialize(w);
+            w.Close();
+            f.Close();
+            f = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm.tmp", FileMode.Open, FileAccess.Read);
+            BinaryReader r = new BinaryReader(f);
+            long result = calc(r);
+            r.Close();
+            f.Close();
+            return result;
+        }
+
+        internal delegate long CVL(BinaryReader r);
     }
 
     class Log

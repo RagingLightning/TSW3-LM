@@ -119,16 +119,37 @@ namespace TSW3LM
             List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Compressed).Select(p => p.GvasBaseProperty).ToList();
             List<UEGenericStructProperty> raw = Liveries.Values.Where(p => !p.Compressed).Select(p => p.GvasBaseProperty).ToList();
 
-            GvasZipArray.Count = zip.Count;
-            GvasZipArray.Items = zip.ToArray();
-
             GameData.Properties.Clear();
-            GameData.Properties.Add(GvasZipArray);
+
+            if (zip.Count > 0)
+            {
+                GvasZipArray.Count = zip.Count;
+                GvasZipArray.Items = zip.ToArray();
+                GvasZipArray.ValueLength = Utils.DetermineValueLength(GvasZipArray, r =>
+                {
+                    r.ReadUEString();   //name
+                    r.ReadUEString();   //type
+                    r.ReadInt64();      //valueLength
+                    r.ReadUEString();   //itemType
+                    r.ReadByte();       //terminator
+                    return r.BaseStream.Length - r.BaseStream.Position;
+                });
+                GameData.Properties.Add(GvasZipArray);
+            }
 
             if (raw.Count > 0)
             {
                 GvasRawArray.Count = raw.Count;
                 GvasRawArray.Items = raw.ToArray();
+                GvasRawArray.ValueLength = Utils.DetermineValueLength(GvasRawArray, r =>
+                {
+                    r.ReadUEString();   //name
+                    r.ReadUEString();   //type
+                    r.ReadInt64();      //valueLength
+                    r.ReadUEString();   //itemType
+                    r.ReadByte();       //terminator
+                    return r.BaseStream.Length - r.BaseStream.Position;
+                });
                 GameData.Properties.Add(GvasRawArray);
             }
 
