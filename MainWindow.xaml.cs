@@ -311,27 +311,6 @@ namespace TSW3LM
             }
         }
 
-        private void ImportTsw2Livery(string fileName)
-        {
-            Log.Message($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
-            try
-            {
-                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(fileName), false);
-                string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
-                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
-                livery.ID = newId;
-                Game.Add(livery);
-                UpdateGameGui();
-                ShowStatusText("*.tsw2liv successfully imported");
-            }
-            catch (Exception e)
-            {
-                Log.Exception("Error importing TSW2 livery!", e, "MW:ImportTsw2Livery");
-                lblMessage.Content = $"[ERR] Error while importing TSW2 livery: {e.Message}";
-            }
-        }
-
         private void PrepareLiveryExport(Game.Livery gl)
         {
             Log.Message($"Preparing Livery export for Livery {gl.ID}", "MW:PrepareLiveryExport");
