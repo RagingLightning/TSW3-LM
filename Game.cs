@@ -138,11 +138,10 @@ namespace TSW3LM
 
             GameData.Properties.Add(new UENoneProperty());
 
-            if (!int.TryParse(MainWindow.VERSION.Split('.')[^1], out int _))    //If in dev-version
-                File.WriteAllText($"{Config.LibraryPath}\\backup\\zz_gvas.json", JsonConvert.SerializeObject(GameData, Formatting.Indented));
-
             byte[] Contents = File.ReadAllBytes(Config.GamePath);
             Directory.CreateDirectory($"{Config.LibraryPath}\\backup");
+            if (!int.TryParse(MainWindow.VERSION.Split('.')[^1], out int _))    //If in dev-version
+                File.WriteAllText($"{Config.LibraryPath}\\backup\\zz-gvas.json", JsonConvert.SerializeObject(GameData, Formatting.Indented));
             string backupName = DateTime.Now.ToString("yyMMdd-HHmmss") + ".bak3";
             File.WriteAllBytes($"{Config.LibraryPath}\\backup\\{backupName}", Contents);
 
