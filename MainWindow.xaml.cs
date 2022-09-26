@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
 using GvasFormat.Serialization.UETypes;
+using static TSW3LM.GameLiveryInfo;
 
 namespace TSW3LM
 {
@@ -243,10 +244,14 @@ namespace TSW3LM
                 lstGameLiveries.Items.Clear();
                 foreach (FileInfo info in new DirectoryInfo(Config.CCPath).GetFiles("*.ugc"))
                 {
-                    Library.Livery livery = Utils.ConvertCC(File.ReadAllBytes(info.FullName));
-                    string Text = $"{livery.Name} for {livery.Model} <{info.Name}>";
-                    lstGameLiveries.Items.Add(Text);
-                    Log.Message($"Added CC livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                    try
+                    {
+                        Library.Livery livery = Utils.ConvertCC(File.ReadAllBytes(info.FullName));
+                        string Text = $"{livery.Name} for {livery.Model} <{info.Name}>";
+                        lstGameLiveries.Items.Add(Text);
+                        Log.Message($"Added CC livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
+                    }
+                    catch (Exception e) { Log.Exception($"Error adding CC livery {info.Name}", e, "MW:UpdateGameGui"); }
                 }
                 Log.Message("CC liveries in GUI updated", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
 

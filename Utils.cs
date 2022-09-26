@@ -362,9 +362,13 @@ namespace TSW3LM
             {
                 UEGenericStructProperty reskinEditorDataProp = new UEGenericStructProperty { Name = "ReskinEditorData", Type = "StructProperty", StructType = "DTGReskinEditData" };
                 ((UEGenericStructProperty)reskinnedElementsProp).Properties.RemoveAll(p => p is UEMapProperty && p.Name == "MaterialInstances");
-                UEProperty lastUsedColoursProp = ((UEGenericStructProperty)reskinnedElementsProp).Properties.First(p => p is UEArrayProperty && p.Name == "LastUsedColours");
-                ((UEGenericStructProperty)reskinnedElementsProp).Properties.Remove(lastUsedColoursProp);
-                reskinEditorDataProp.Properties.Add(lastUsedColoursProp);
+                try
+                {
+                    UEProperty lastUsedColoursProp = ((UEGenericStructProperty)reskinnedElementsProp).Properties.First(p => p is UEArrayProperty && p.Name == "LastUsedColours");
+                    ((UEGenericStructProperty)reskinnedElementsProp).Properties.Remove(lastUsedColoursProp);
+                    reskinEditorDataProp.Properties.Add(lastUsedColoursProp);
+                }
+                catch (Exception) { }
                 reskinEditorDataProp.Properties.Add(new UENoneProperty());
 
                 prop.Properties.Add(reskinEditorDataProp);
