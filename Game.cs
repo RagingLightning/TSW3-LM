@@ -54,24 +54,14 @@ namespace TSW3LM
             try
             {
                 if (!GameData.Properties.Any(p => p is UEArrayProperty))
-                {
                     Log.Message("No livery exists in the game...", "G:Load", Log.LogLevel.WARNING);
-                }
-
                 try
                 {
                     GvasZipArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
                 }
                 catch (Exception)
                 {
-                    GvasZipArray = new UEArrayProperty
-                    {
-                        Name = "CompressedReskins",
-                        Type = "ArrayProperty",
-                        ItemType = "StructProperty",
-                        Items = new UEProperty[] { }
-                    };
-                    GameData.Properties.Add(GvasRawArray);
+                    GvasZipArray = new UEArrayProperty { Name = "CompressedReskins", Type = "ArrayProperty", ItemType = "StructProperty", Items = new UEProperty[] { } };
                 }
 
                 try
@@ -80,14 +70,7 @@ namespace TSW3LM
                 }
                 catch (Exception)
                 {
-                    GvasRawArray = new UEArrayProperty
-                    {
-                        Name = "Reskins",
-                        Type = "ArrayProperty",
-                        ItemType = "StructProperty",
-                        Items = new UEProperty[] { }
-                    };
-                    GameData.Properties.Add(GvasRawArray);
+                    GvasRawArray = new UEArrayProperty { Name = "Reskins", Type = "ArrayProperty", ItemType = "StructProperty", Items = new UEProperty[] { } };
                 }
 
                 int i = 0;
@@ -155,7 +138,8 @@ namespace TSW3LM
 
             GameData.Properties.Add(new UENoneProperty());
 
-            File.WriteAllText($"{Config.LibraryPath}\\gvas.json", JsonConvert.SerializeObject(GameData));
+            if (!int.TryParse(MainWindow.VERSION.Split('.')[^1], out int _))    //If in dev-version
+                File.WriteAllText($"{Config.LibraryPath}\\backup\\zz_gvas.json", JsonConvert.SerializeObject(GameData, Formatting.Indented));
 
             byte[] Contents = File.ReadAllBytes(Config.GamePath);
             Directory.CreateDirectory($"{Config.LibraryPath}\\backup");
