@@ -56,10 +56,23 @@ namespace TSW3LM
                 if (!GameData.Properties.Any(p => p is UEArrayProperty))
                 {
                     Log.Message("No livery exists in the game...", "G:Load", Log.LogLevel.WARNING);
-                    GvasZipArray = new UEArrayProperty();
-                    return null;
                 }
-                GvasZipArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
+
+                try
+                {
+                    GvasZipArray = (UEArrayProperty)GameData.Properties.First(p => p is UEArrayProperty && p.Name == "CompressedReskins");
+                }
+                catch (Exception)
+                {
+                    GvasZipArray = new UEArrayProperty
+                    {
+                        Name = "CompressedReskins",
+                        Type = "ArrayProperty",
+                        ItemType = "StructProperty",
+                        Items = new UEProperty[] { }
+                    };
+                    GameData.Properties.Add(GvasRawArray);
+                }
 
                 try
                 {
@@ -67,12 +80,14 @@ namespace TSW3LM
                 }
                 catch (Exception)
                 {
-                    GvasRawArray = new UEArrayProperty();
+                    GvasRawArray = new UEArrayProperty
+                    {
+                        Name = "Reskins",
+                        Type = "ArrayProperty",
+                        ItemType = "StructProperty",
+                        Items = new UEProperty[] { }
+                    };
                     GameData.Properties.Add(GvasRawArray);
-                    GvasRawArray.Name = "Reskins";
-                    GvasRawArray.Type = "ArrayProperty";
-                    GvasRawArray.ItemType = "StructProperty";
-                    GvasRawArray.Items = new UEProperty[] { };
                 }
 
                 int i = 0;
