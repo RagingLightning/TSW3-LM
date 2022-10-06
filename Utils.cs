@@ -227,6 +227,7 @@ namespace TSW3LM
             {
                 if (t is UEArrayProperty && t.Name == "LastUsedColours" && ((UEArrayProperty)t).ItemType == "StructProperty")
                 {
+                    if(((UEArrayProperty)t).Count != 0)
                     foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
                     {
                         if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");

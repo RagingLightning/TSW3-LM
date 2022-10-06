@@ -21,7 +21,7 @@ namespace TSW3LM
     {
         internal static MainWindow INSTANCE;
 
-        private const string VERSION = "0.2.0b";
+        private const string VERSION = "0.2.2";
 
         private Thread InfoCollectorThread = new Thread(GameLiveryInfo.AutoRefresh);
 
@@ -288,27 +288,6 @@ namespace TSW3LM
             Game.Add(new Game.Livery(ll.GvasBaseProperty, ll.Compressed));
             Log.Message($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
             ShowStatusText("Livery successfully imported");
-        }
-
-        private void ImportTsw2Livery(string fileName)
-        {
-            Log.Message($"Importing TSW2 livery from {fileName}", "MW:ImportTsw2Livery");
-            try
-            {
-                Game.Livery livery = Utils.ConvertTSW2(File.ReadAllBytes(fileName), false);
-                string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
-                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
-                livery.ID = newId;
-                Game.Add(livery);
-                UpdateGameGui();
-                ShowStatusText("*.tsw2liv successfully imported");
-            }
-            catch (Exception e)
-            {
-                Log.Exception("Error importing TSW2 livery!", e, "MW:ImportTsw2Livery");
-                lblMessage.Content = $"[ERR] Error while importing TSW2 livery: {e.Message}";
-            }
         }
 
         private void ImportTsw2Livery(string fileName)
