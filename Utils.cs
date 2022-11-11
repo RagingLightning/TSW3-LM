@@ -142,7 +142,7 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        internal static Game.Livery ConvertTSW2(byte[] tsw2Data, bool catchFormatError)
+        internal static Game.Livery? ConvertTSW2(byte[] tsw2Data, bool catchFormatError)
         {
             byte[] data = new byte[tsw2Data.Length];
             for (int i = 1; i <= tsw2Data.Length; i++)
@@ -153,6 +153,11 @@ namespace TSW3LM
                     data[i - 1] = tsw2Data[i];
             }
 
+            return ByteArrayToLivery(data, catchFormatError);
+        }
+
+        internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError)
+        {
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
             UEGenericStructProperty prop = new UEGenericStructProperty();
             prop.StructType = "ReskinSave";
@@ -162,6 +167,7 @@ namespace TSW3LM
             {
                 prop.Properties.Add(p);
             }
+
             try
             {
                 ValidateTsw2Import(prop);

@@ -55,7 +55,7 @@ namespace TSW3LM
                     }
                     File.WriteAllBytes(file.FullName + ".tmp", data);
 
-                    List<UEProperty> properties = new List<UEProperty>();
+                        List<UEProperty> properties = new List<UEProperty>();
 
                     BinaryReader reader = new BinaryReader(File.Open(file.FullName + ".tmp", FileMode.Open, FileAccess.Read, FileShare.Read), Encoding.ASCII, true);
                     while (UEProperty.Read(reader) is UEProperty prop) properties.Add(prop);
