@@ -127,6 +127,13 @@ namespace TSW3LM
 
             InitializeComponent();
 
+            if (Config.LibraryPath != "")
+            {
+                if (File.Exists("LiveryInfo.json"))
+                    File.Move("LiveryInfo.json", $"{Config.LibraryPath}\\zz_LiveryInfo.json");
+                GameLiveryInfo.Init($"{Config.LibraryPath}\\zz_LiveryInfo.json");
+            }
+
             if (Config.GamePath != "")
             {
                 Log.Message("Loading GamePath Data...", "MW::<init>");
@@ -147,12 +154,6 @@ namespace TSW3LM
                 {
                     lblMessage.Content = $"ERROR WHILE LOADING GAME LIVERIES, please ensure you:\n - have created at least one livery in the game\n\nif you need help, consult the wiki at https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started \n or @RagingLightning on discord or create an issue on github";
                 }
-            }
-            if (Config.LibraryPath != "")
-            {
-                if (File.Exists("LiveryInfo.json"))
-                    File.Move("LiveryInfo.json", $"{Config.LibraryPath}\\zz_LiveryInfo.json");
-                GameLiveryInfo.Init($"{Config.LibraryPath}\\zz_LiveryInfo.json");
             }
 
             UpdateGameGui();
@@ -325,15 +326,18 @@ namespace TSW3LM
         {
             Log.Message($"Exporting livery {gl.ID}", "MW:ExportLivery");
             GameLiveryInfo.Info info = GameLiveryInfo.Get(gl.ID);
-            string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.tsw3");
+
+            var extension = gl.Compressed ? "tsw3" : "tsw3liv";
+
+            string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.{extension}");
             if (info.Name == "<unnamed>" && info.Model == "<unknown>")
             {
                 Log.Message($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
                 SaveFileDialog Dialog = new SaveFileDialog
                 {
                     InitialDirectory = Config.LibraryPath,
-                    Filter = "TSW3 Livery File (*.tsw3)|*.tsw3",
-                    DefaultExt = "*.tsw3"
+                    Filter = $"TSW3 Livery File (*.{extension})|*.{extension}",
+                    DefaultExt = $"*.{extension}"
                 };
                 if (Dialog.ShowDialog() == true)
                     fileName = Utils.SanitizeFileName(Dialog.SafeFileName);

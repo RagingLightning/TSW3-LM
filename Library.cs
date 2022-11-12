@@ -23,7 +23,7 @@ namespace TSW3LM
             Log.Message("Loading library...", "L:Load");
             DirectoryInfo Info = new DirectoryInfo(Config.LibraryPath);
             int i = 0;
-            foreach (FileInfo file in Info.GetFiles("*.tsw3", SearchOption.TopDirectoryOnly))
+            foreach (FileInfo file in Info.GetFiles("*.tsw3*", SearchOption.TopDirectoryOnly))
             {
                 try
                 {
@@ -31,7 +31,12 @@ namespace TSW3LM
                     if (livery == null)
                         throw new FormatException("Library livery could not be deserialized");
                     livery.FileName = file.Name;
+                    
+                    if (livery.FileName.EndsWith(".tsw3liv", StringComparison.OrdinalIgnoreCase))
+                        livery.Compressed = false;
+
                     while (Liveries.ContainsKey(i)) i++;
+
                     Liveries.Add(i, livery);
                 }
                 catch (Exception e)
@@ -87,7 +92,7 @@ namespace TSW3LM
 
         internal static void Add(Livery livery)
         {
-            int index = Enumerable.Range(0, Liveries.Count+1).First(i => !Liveries.ContainsKey(i));
+            int index = Enumerable.Range(0, Liveries.Count + 1).First(i => !Liveries.ContainsKey(i));
             Liveries[index] = livery;
         }
 

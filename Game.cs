@@ -185,15 +185,8 @@ namespace TSW3LM
                 return null;
             }
 
-            Log.Message("Successfully decompressed, writing file");
-
-            var filename = Path.Combine(Path.GetTempPath(), $"tsw3reskin{index}.liv");
-            File.WriteAllBytes(filename, output);
-
-            // TODO this doesn't work yet
-            //var decompressedLivery = Utils.ByteArrayToLivery(output, true);
-            //return decompressedLivery;
-            return null;
+            var decompressedLivery = Utils.ConvertTSW3(output, true);
+            return decompressedLivery;
         }
 
         internal static void Save()
@@ -205,37 +198,46 @@ namespace TSW3LM
 
             if (zip.Count > 0)
             {
+                // CompressedReskins
                 GvasZipArray.Count = zip.Count;
                 GvasZipArray.Items = zip.ToArray();
                 GvasZipArray.ValueLength = Utils.DetermineValueLength(GvasZipArray, r =>
                 {
-                    r.ReadUEString();   //name
-                    r.ReadUEString();   //type
-                    r.ReadInt64();      //valueLength
-                    r.ReadUEString();   //itemType
-                    r.ReadByte();       //terminator
+                    r.ReadUEString(); //name
+                    r.ReadUEString(); //type
+                    r.ReadInt64(); //valueLength
+                    r.ReadUEString(); //itemType
+                    r.ReadByte(); //terminator
                     return r.BaseStream.Length - r.BaseStream.Position;
                 });
+
                 GameData.Properties.Add(GvasZipArray);
+
+                // None
+                GameData.Properties.Add(new UENoneProperty());
             }
 
             if (raw.Count > 0)
             {
+                // Reskins
                 GvasRawArray.Count = raw.Count;
                 GvasRawArray.Items = raw.ToArray();
                 GvasRawArray.ValueLength = Utils.DetermineValueLength(GvasRawArray, r =>
                 {
-                    r.ReadUEString();   //name
-                    r.ReadUEString();   //type
-                    r.ReadInt64();      //valueLength
-                    r.ReadUEString();   //itemType
-                    r.ReadByte();       //terminator
+                    r.ReadUEString(); //name
+                    r.ReadUEString(); //type
+                    r.ReadInt64(); //valueLength
+                    r.ReadUEString(); //itemType
+                    r.ReadByte(); //terminator
                     return r.BaseStream.Length - r.BaseStream.Position;
                 });
+
                 GameData.Properties.Add(GvasRawArray);
             }
 
+            // None
             GameData.Properties.Add(new UENoneProperty());
+
 
             File.WriteAllText($"{Config.LibraryPath}\\gvas.json", JsonConvert.SerializeObject(GameData));
 

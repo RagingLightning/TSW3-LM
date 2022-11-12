@@ -156,6 +156,26 @@ namespace TSW3LM
             return ByteArrayToLivery(data, catchFormatError);
         }
 
+        internal static Game.Livery? ConvertTSW3(byte[] tsw2Data, bool catchFormatError)
+        {
+            var bytes = tsw2Data.ToList();
+            bytes.RemoveRange(0, 2);
+            bytes.Add(0);
+
+            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError);
+            
+            if (livery != null)
+            {
+                string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
+
+                livery.ID = newId;
+            }
+
+            return livery;
+        }
+
         internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError)
         {
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
@@ -233,15 +253,15 @@ namespace TSW3LM
             {
                 if (t is UEArrayProperty && t.Name == "LastUsedColours" && ((UEArrayProperty)t).ItemType == "StructProperty")
                 {
-                    if(((UEArrayProperty)t).Count != 0)
-                    foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
-                    {
-                        if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
-                        List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
-                        tmp.Remove(p2);
-                        ((UEArrayProperty)t).Items = tmp.ToArray();
-                        prop.Properties.Add(p2);
-                    }
+                    if (((UEArrayProperty)t).Count != 0)
+                        foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
+                        {
+                            if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
+                            List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
+                            tmp.Remove(p2);
+                            ((UEArrayProperty)t).Items = tmp.ToArray();
+                            prop.Properties.Add(p2);
+                        }
                 }
                 else if (!(t is UENoneProperty)) throw new FormatException($"ReskinEditorData contains foreign property {t.Name} (Type: {t.GetType()})");
             }
