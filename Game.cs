@@ -98,15 +98,23 @@ namespace TSW3LM
                     while (Liveries.ContainsKey(i)) i++;
                     var structProperty = (UEGenericStructProperty)LiveryBase;
 
-                    var decompressedLivery = CompressionHelper.DecompressReskin(structProperty);
-
-                    if (decompressedLivery != null)
+                    try
                     {
-                        string name = ((UETextProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
-                        string model = ((UEStringProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                        string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model);
+                        var decompressedLivery = CompressionHelper.DecompressReskin(structProperty);
 
-                        decompressedLivery.ID = newId;
+                        if (decompressedLivery != null)
+                        {
+                            string name = ((UETextProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                            string model = ((UEStringProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                            string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model);
+
+                            decompressedLivery.ID = newId;
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Exception("Could not decompress livery " + i, e);
                     }
 
                     Liveries.Add(i, new Livery(structProperty, true));

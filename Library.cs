@@ -88,17 +88,25 @@ namespace TSW3LM
 
             if (livery.Compressed)
             {
-                var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
-                if (decompressed != null)
+                try
                 {
-                    livery.GvasBaseProperty = decompressed.GvasBaseProperty;
-                    livery.Compressed = false;
+
+                    var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
+                    if (decompressed != null)
+                    {
+                        livery.GvasBaseProperty = decompressed.GvasBaseProperty;
+                        livery.Compressed = false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Exception("Could not decompress livery " + livery.Name, e);
                 }
             }
 
             try
             {
-                File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery));
+                File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery, Formatting.Indented));
             }
             catch (Exception e)
             {
