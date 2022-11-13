@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ICSharpCode.SharpZipLib.Zip.Compression;
+using System.Text;
 
 namespace TSW3LM
 {
@@ -97,12 +98,18 @@ namespace TSW3LM
                     while (Liveries.ContainsKey(i)) i++;
                     var structProperty = (UEGenericStructProperty)LiveryBase;
 
-                    var decompressedLivery = HandleCompressedReskin(structProperty, i);
+                    var decompressedLivery = CompressionHelper.DecompressReskin(structProperty);
 
                     if (decompressedLivery != null)
-                        Liveries.Add(i, decompressedLivery);
-                    else
-                        Liveries.Add(i, new Livery(structProperty, true));
+                    {
+                        string name = ((UETextProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                        string model = ((UEStringProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                        string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model);
+
+                        decompressedLivery.ID = newId;
+                    }
+
+                    Liveries.Add(i, new Livery(structProperty, true));
                 }
                 foreach (UEProperty LiveryBase in GvasRawArray.Items)
                 {
@@ -120,73 +127,6 @@ namespace TSW3LM
             Log.Message("All liveries loaded successfully", "G:Load", Log.LogLevel.DEBUG);
 
             return null;
-        }
-
-        private static Livery? HandleCompressedReskin(UEGenericStructProperty structProperty, int index)
-        {
-            var compressedReskin = structProperty.Properties
-                                                 .FirstOrDefault(p => p is UEArrayProperty
-                                                                      && p.Name == "CompressedReskin") as UEArrayProperty;
-            var byteString = compressedReskin?.Items?.FirstOrDefault() as UEByteProperty;
-
-            if (byteString == null)
-                return null;
-
-            var byteArray = StringToByteArray(byteString.Value);
-            using var memoryStream = new MemoryStream(byteArray);
-            using var binaryReader = new BinaryReader(memoryStream);
-
-            // first 16 bytes are bullshit we can ignore
-            binaryReader.ReadUInt64();
-            binaryReader.ReadUInt64();
-
-            // next 8 bytes store compressed size
-            var compressedSize = binaryReader.ReadInt32();
-            var input = new byte[compressedSize];
-            binaryReader.ReadInt32();
-
-            // next 8 bytes store decompressed size
-            var decompressedSize = binaryReader.ReadInt32();
-            var output = new byte[decompressedSize];
-            binaryReader.ReadInt32();
-
-            // for whatever reason they repeat the previous 16 bytes, we disregard this
-            binaryReader.ReadInt64();
-            binaryReader.ReadInt64();
-
-            Log.Message("reading compressed file");
-
-            // now begins the actual reading
-
-            // the input will be however long the input file length is
-            for (int i = 0; i < input.Length; i++)
-            {
-                input[i] = binaryReader.ReadByte();
-            }
-
-            // decompress using zlib
-            var inflater = new Inflater();
-
-            // do stuff I saw in the java docs
-            inflater.SetInput(input, 0, input.Length);
-
-            Log.Message("Decompressing using zlib");
-
-            try
-            {
-                var resultLength = inflater.Inflate(output);
-                inflater.Reset();
-
-                Log.Message("Length of decompressed: " + resultLength);
-            }
-            catch (Exception e)
-            {
-                Log.Exception("Failed inflating", e);
-                return null;
-            }
-
-            var decompressedLivery = Utils.ConvertTSW3(output, true);
-            return decompressedLivery;
         }
 
         internal static void Save()
@@ -278,14 +218,6 @@ namespace TSW3LM
             }
 
 
-        }
-        internal static byte[] StringToByteArray(String hex)
-        {
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            return bytes;
         }
     }
 }

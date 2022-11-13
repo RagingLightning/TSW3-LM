@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Windows.Forms;
 
 namespace TSW3LM
@@ -163,16 +164,6 @@ namespace TSW3LM
             bytes.RemoveAt(bytes.Count - 1);
 
             var livery = ConvertTSW2(bytes.ToArray(), catchFormatError);
-
-            if (livery != null)
-            {
-                string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
-                string model = ((UEStringProperty)livery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                string newId = GameLiveryInfo.SetInfo(livery.ID, name, model);
-
-                livery.ID = newId;
-            }
-
             return livery;
         }
 
@@ -336,6 +327,23 @@ namespace TSW3LM
         }
 
         internal delegate long CVL(BinaryReader r);
+
+        internal static byte[] StringToByteArray(String hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
+
+        internal static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
     }
 
     class Log
@@ -437,6 +445,7 @@ namespace TSW3LM
             try
             {
 #pragma warning disable CS8602,CS8600
+                livery.Compressed = jo["Compressed"].Value<bool>();
                 livery.Name = jo["Name"].ToString();
                 livery.Model = jo["Model"].ToString();
                 livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);

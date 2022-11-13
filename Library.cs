@@ -23,7 +23,7 @@ namespace TSW3LM
             Log.Message("Loading library...", "L:Load");
             DirectoryInfo Info = new DirectoryInfo(Config.LibraryPath);
             int i = 0;
-            foreach (FileInfo file in Info.GetFiles("*.tsw3*", SearchOption.TopDirectoryOnly))
+            foreach (FileInfo file in Info.GetFiles("*.tsw3", SearchOption.TopDirectoryOnly))
             {
                 try
                 {
@@ -31,9 +31,14 @@ namespace TSW3LM
                     if (livery == null)
                         throw new FormatException("Library livery could not be deserialized");
                     livery.FileName = file.Name;
-                    
-                    if (livery.FileName.EndsWith(".tsw3liv", StringComparison.OrdinalIgnoreCase))
-                        livery.Compressed = false;
+
+                    if (!livery.Compressed)
+                    {
+                        // TSW3 expects compressed liveries only, so if we have an uncompressed .tsw3 file,
+                        // compress it on the fly
+                        livery.GvasBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
+                        livery.Compressed = true;
+                    }
 
                     while (Liveries.ContainsKey(i)) i++;
 
@@ -80,6 +85,17 @@ namespace TSW3LM
         internal static void Save(Livery livery)
         {
             Log.Message($"Saving library livery {livery.Id}", "L:Save");
+
+            if (livery.Compressed)
+            {
+                var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
+                if (decompressed != null)
+                {
+                    livery.GvasBaseProperty = decompressed.GvasBaseProperty;
+                    livery.Compressed = false;
+                }
+            }
+
             try
             {
                 File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery));

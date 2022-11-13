@@ -327,17 +327,15 @@ namespace TSW3LM
             Log.Message($"Exporting livery {gl.ID}", "MW:ExportLivery");
             GameLiveryInfo.Info info = GameLiveryInfo.Get(gl.ID);
 
-            var extension = gl.Compressed ? "tsw3" : "tsw3liv";
-
-            string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.{extension}");
+            string fileName = Utils.SanitizeFileName($"{info.Name} for {info.Model}.tsw3");
             if (info.Name == "<unnamed>" && info.Model == "<unknown>")
             {
                 Log.Message($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
                 SaveFileDialog Dialog = new SaveFileDialog
                 {
                     InitialDirectory = Config.LibraryPath,
-                    Filter = $"TSW3 Livery File (*.{extension})|*.{extension}",
-                    DefaultExt = $"*.{extension}"
+                    Filter = $"TSW3 Livery File (*.tsw3)|*.tsw3",
+                    DefaultExt = $"*.tsw3"
                 };
                 if (Dialog.ShowDialog() == true)
                     fileName = Utils.SanitizeFileName(Dialog.SafeFileName);
