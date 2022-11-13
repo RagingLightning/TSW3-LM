@@ -152,9 +152,6 @@ namespace TSW3LM
                 });
 
                 GameData.Properties.Add(GvasZipArray);
-
-                // None
-                GameData.Properties.Add(new UENoneProperty());
             }
 
             if (raw.Count > 0)

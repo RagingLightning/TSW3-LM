@@ -87,11 +87,10 @@ namespace TSW3LM
             var bytes = ms.ToArray().ToList();
 
             // Re-add the bytes necessary for a TSW3 livery
-            bytes.Insert(0, 136);
-            bytes.Insert(1, 123);
-            bytes.Insert(2, 1);
+            bytes.Insert(0, 85);
+            bytes.Insert(1, 7);
+            bytes.Insert(2, 0);
             bytes.Insert(3, 0);
-            bytes.RemoveAt(bytes.Count - 1);
 
             // Deflate
             using var outputByteStream = new MemoryStream();
@@ -105,8 +104,8 @@ namespace TSW3LM
 
             // Now reassemble the whole thing
             var header = new byte[] { 193, 131, 42, 158, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0 };
-            var compressedMemoryStream = new MemoryStream();
-            var compressedWriter = new BinaryWriter(compressedMemoryStream);
+            using var compressedMemoryStream = new MemoryStream();
+            using var compressedWriter = new BinaryWriter(compressedMemoryStream);
 
             compressedWriter.Write(header, 0, header.Length);
 
@@ -152,20 +151,17 @@ namespace TSW3LM
                 {
                     idProperty,
                     arrayProperty,
-                    new UENoneProperty
-                    {
-                        Name = "None"
-                    }
+                    new UENoneProperty()
                 }
             };
-
-            // TODO this calculation is not correct and causes TSW3LM to fail after importing
+            
             compressedProperty.ValueLength = Utils.DetermineValueLength(compressedProperty, r =>
             {
                 r.ReadUEString(); //name
                 r.ReadUEString(); //type
                 r.ReadInt64(); //valueLength
-                r.ReadUEString(); //itemType
+                r.ReadUEString();
+                r.ReadBytes(16);
                 r.ReadByte(); //terminator
                 return r.BaseStream.Length - r.BaseStream.Position;
             });
