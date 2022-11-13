@@ -159,11 +159,11 @@ namespace TSW3LM
         internal static Game.Livery? ConvertTSW3(byte[] tsw2Data, bool catchFormatError)
         {
             var bytes = tsw2Data.ToList();
-            bytes.RemoveRange(0, 2);
-            bytes.Add(0);
+            bytes.RemoveRange(0, 3);
+            bytes.RemoveAt(bytes.Count - 1);
 
             var livery = ConvertTSW2(bytes.ToArray(), catchFormatError);
-            
+
             if (livery != null)
             {
                 string name = ((UETextProperty)livery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
