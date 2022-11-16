@@ -5,13 +5,12 @@ using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Windows.Forms;
+using System.Text;
 
 namespace TSW3LM
 {
@@ -142,7 +141,7 @@ namespace TSW3LM
             throw new NotImplementedException();
         }
 
-        internal static Game.Livery ConvertTSW2(byte[] tsw2Data, bool catchFormatError)
+        internal static Game.Livery? ConvertTSW2(byte[] tsw2Data, bool catchFormatError, string liveryType = LiveryType.CONVERTED_FROM_TSW2)
         {
             byte[] data = new byte[tsw2Data.Length];
             for (int i = 1; i <= tsw2Data.Length; i++)
@@ -153,6 +152,21 @@ namespace TSW3LM
                     data[i - 1] = tsw2Data[i];
             }
 
+            return ByteArrayToLivery(data, catchFormatError, liveryType);
+        }
+
+        internal static Game.Livery? ConvertTSW3(byte[] tsw3Data, bool catchFormatError)
+        {
+            var bytes = tsw3Data.ToList();
+            bytes.RemoveRange(0, 3);
+            bytes.RemoveAt(bytes.Count - 1);
+
+            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.UNCOMPRESSED_TSW3);
+            return livery;
+        }
+
+        internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError, string liveryType)
+        {
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
             UEGenericStructProperty prop = new UEGenericStructProperty();
             prop.StructType = "ReskinSave";
@@ -162,6 +176,7 @@ namespace TSW3LM
             {
                 prop.Properties.Add(p);
             }
+
             try
             {
                 ValidateTsw2Import(prop);
@@ -176,7 +191,7 @@ namespace TSW3LM
                 }
             }
 
-            return new Game.Livery(prop, false);
+            return new Game.Livery(prop, liveryType);
         }
 
         internal static void ValidateTsw2Import(UEGenericStructProperty prop)
@@ -227,15 +242,15 @@ namespace TSW3LM
             {
                 if (t is UEArrayProperty && t.Name == "LastUsedColours" && ((UEArrayProperty)t).ItemType == "StructProperty")
                 {
-                    if(((UEArrayProperty)t).Count != 0)
-                    foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
-                    {
-                        if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
-                        List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
-                        tmp.Remove(p2);
-                        ((UEArrayProperty)t).Items = tmp.ToArray();
-                        prop.Properties.Add(p2);
-                    }
+                    if (((UEArrayProperty)t).Count != 0)
+                        foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
+                        {
+                            if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
+                            List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
+                            tmp.Remove(p2);
+                            ((UEArrayProperty)t).Items = tmp.ToArray();
+                            prop.Properties.Add(p2);
+                        }
                 }
                 else if (!(t is UENoneProperty)) throw new FormatException($"ReskinEditorData contains foreign property {t.Name} (Type: {t.GetType()})");
             }
@@ -310,6 +325,41 @@ namespace TSW3LM
         }
 
         internal delegate long CVL(BinaryReader r);
+
+        internal static byte[] HexStringToByteArray(string hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            return bytes;
+        }
+
+        internal static string ByteArrayToHexString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
+    }
+
+    public class LiveryType
+    {
+        public const string COMPRESSED_TSW3 = "COMPRESSED_TSW3";
+        public const string UNCOMPRESSED_TSW3 = "UNCOMPRESSED_TSW3";
+        public const string CONVERTED_FROM_TSW2 = "CONVERTED_FROM_TSW2";
+
+        internal static string Get(string v)
+        {
+            switch (v)
+            {
+                case COMPRESSED_TSW3: return COMPRESSED_TSW3;
+                case UNCOMPRESSED_TSW3: return UNCOMPRESSED_TSW3;
+                case CONVERTED_FROM_TSW2: return CONVERTED_FROM_TSW2;
+                default: throw new ArgumentException("Livery is of unknown type " + v);
+            }
+        }
     }
 
     class Log
@@ -408,19 +458,16 @@ namespace TSW3LM
         {
             Library.Livery livery = existingValue == null ? new Library.Livery() : (Library.Livery)existingValue;
             JObject jo = JObject.Load(reader);
-            try
-            {
-#pragma warning disable CS8602,CS8600
-                livery.Name = jo["Name"].ToString();
-                livery.Model = jo["Model"].ToString();
-                livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
-                return livery;
-#pragma warning restore CS8602,CS8600
-            }
-            catch (Exception)
-            {
-                throw new FormatException("Unable to deserialize library livery");
-            }
+#pragma warning disable CS8602,CS8600,CS8604
+            livery.Name = jo["Name"].ToString();
+            livery.Model = jo["Model"].ToString();
+            livery.GvasBaseProperty = (UEGenericStructProperty)ReadUEProperty((JObject)jo["GvasBaseProperty"]);
+            if (jo.ContainsKey("Type"))
+                livery.Type = LiveryType.Get(jo["Type"].ToString());
+            else
+                livery.Type = livery.GvasBaseProperty.Properties.Any(p => p.Name == "DisplayName") ? LiveryType.UNCOMPRESSED_TSW3 : LiveryType.COMPRESSED_TSW3;
+            return livery;
+#pragma warning restore CS8602,CS8600,CS8604
         }
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)

@@ -31,7 +31,9 @@ namespace TSW3LM
                     if (livery == null)
                         throw new FormatException("Library livery could not be deserialized");
                     livery.FileName = file.Name;
+
                     while (Liveries.ContainsKey(i)) i++;
+
                     Liveries.Add(i, livery);
                 }
                 catch (Exception e)
@@ -55,7 +57,7 @@ namespace TSW3LM
                     }
                     File.WriteAllBytes(file.FullName + ".tmp", data);
 
-                    List<UEProperty> properties = new List<UEProperty>();
+                        List<UEProperty> properties = new List<UEProperty>();
 
                     BinaryReader reader = new BinaryReader(File.Open(file.FullName + ".tmp", FileMode.Open, FileAccess.Read, FileShare.Read), Encoding.ASCII, true);
                     while (UEProperty.Read(reader) is UEProperty prop) properties.Add(prop);
@@ -75,9 +77,28 @@ namespace TSW3LM
         internal static void Save(Livery livery)
         {
             Log.Message($"Saving library livery {livery.Id}", "L:Save");
+
+            if (livery.Type == LiveryType.COMPRESSED_TSW3)
+            {
+                try
+                {
+
+                    var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
+                    if (decompressed != null)
+                    {
+                        livery.GvasBaseProperty = decompressed.GvasBaseProperty;
+                        livery.Type = LiveryType.UNCOMPRESSED_TSW3;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Exception("Could not decompress livery " + livery.Name, e);
+                }
+            }
+
             try
             {
-                File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery));
+                File.WriteAllText(Config.LibraryPath + "\\" + livery.FileName, JsonConvert.SerializeObject(livery, Formatting.Indented));
             }
             catch (Exception e)
             {
@@ -87,7 +108,7 @@ namespace TSW3LM
 
         internal static void Add(Livery livery)
         {
-            int index = Enumerable.Range(0, Liveries.Count+1).First(i => !Liveries.ContainsKey(i));
+            int index = Enumerable.Range(0, Liveries.Count + 1).First(i => !Liveries.ContainsKey(i));
             Liveries[index] = livery;
         }
 
@@ -101,18 +122,18 @@ namespace TSW3LM
             }
             public string Name { get; set; }
             public string Model { get; set; }
-            public bool Compressed { get; set; }
+            public string Type { get; set; }
 
 
             public UEGenericStructProperty GvasBaseProperty;
 
-            public Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>", bool compressed = true)
+            public Livery(string fileName, UEGenericStructProperty property, string type, string name = "<unnamed>", string model = "<unknown>")
             {
                 FileName = fileName;
-                GvasBaseProperty = property;
                 Name = name;
                 Model = model;
-                Compressed = compressed;
+                Type = type;
+                GvasBaseProperty = property;
             }
 
             internal Livery()
@@ -121,7 +142,7 @@ namespace TSW3LM
                 GvasBaseProperty = new UEGenericStructProperty();
                 Name = string.Empty;
                 Model = string.Empty;
-                Compressed = true;
+                Type = LiveryType.COMPRESSED_TSW3;
             }
         }
 

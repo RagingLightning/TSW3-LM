@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ICSharpCode.SharpZipLib.Zip.Compression;
+using System.Text;
 
 namespace TSW3LM
 {
@@ -94,12 +96,34 @@ namespace TSW3LM
                 foreach (UEProperty LiveryBase in GvasZipArray.Items)
                 {
                     while (Liveries.ContainsKey(i)) i++;
-                    Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase, true));
+                    var structProperty = (UEGenericStructProperty)LiveryBase;
+
+                    try
+                    {
+                        var decompressedLivery = CompressionHelper.DecompressReskin(structProperty);
+
+                        if (decompressedLivery != null)
+                        {
+                            string name = ((UETextProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                            string model = ((UEStringProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                            string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model);
+
+                            decompressedLivery.ID = newId;
+
+                            Liveries.Add(i, decompressedLivery);
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Exception("Could not decompress livery " + i, e);
+                        Liveries.Add(i, new Livery(structProperty, LiveryType.COMPRESSED_TSW3));
+                    }
                 }
                 foreach (UEProperty LiveryBase in GvasRawArray.Items)
                 {
                     while (Liveries.ContainsKey(i)) i++;
-                    Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase, false));
+                    Liveries.Add(i, new Livery((UEGenericStructProperty)LiveryBase, LiveryType.CONVERTED_FROM_TSW2));
                 }
 
             }
@@ -116,44 +140,58 @@ namespace TSW3LM
 
         internal static void Save()
         {
-            List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Compressed).Select(p => p.GvasBaseProperty).ToList();
-            List<UEGenericStructProperty> raw = Liveries.Values.Where(p => !p.Compressed).Select(p => p.GvasBaseProperty).ToList();
+            List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Type == LiveryType.COMPRESSED_TSW3).Select(p => p.GvasBaseProperty).ToList();
+            List<UEGenericStructProperty> raw = Liveries.Values.Where(p => p.Type == LiveryType.CONVERTED_FROM_TSW2).Select(p => p.GvasBaseProperty).ToList();
+
+            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.UNCOMPRESSED_TSW3)) {
+                // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
+                // compress it before saving to disk
+                livery.GvasBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
+                livery.Type = LiveryType.COMPRESSED_TSW3;
+                zip.Add(livery.GvasBaseProperty);
+            }
 
             GameData.Properties.Clear();
 
             if (zip.Count > 0)
             {
+                // CompressedReskins
                 GvasZipArray.Count = zip.Count;
                 GvasZipArray.Items = zip.ToArray();
                 GvasZipArray.ValueLength = Utils.DetermineValueLength(GvasZipArray, r =>
                 {
-                    r.ReadUEString();   //name
-                    r.ReadUEString();   //type
-                    r.ReadInt64();      //valueLength
-                    r.ReadUEString();   //itemType
-                    r.ReadByte();       //terminator
+                    r.ReadUEString(); //name
+                    r.ReadUEString(); //type
+                    r.ReadInt64(); //valueLength
+                    r.ReadUEString(); //itemType
+                    r.ReadByte(); //terminator
                     return r.BaseStream.Length - r.BaseStream.Position;
                 });
+
                 GameData.Properties.Add(GvasZipArray);
             }
 
             if (raw.Count > 0)
             {
+                // Reskins
                 GvasRawArray.Count = raw.Count;
                 GvasRawArray.Items = raw.ToArray();
                 GvasRawArray.ValueLength = Utils.DetermineValueLength(GvasRawArray, r =>
                 {
-                    r.ReadUEString();   //name
-                    r.ReadUEString();   //type
-                    r.ReadInt64();      //valueLength
-                    r.ReadUEString();   //itemType
-                    r.ReadByte();       //terminator
+                    r.ReadUEString(); //name
+                    r.ReadUEString(); //type
+                    r.ReadInt64(); //valueLength
+                    r.ReadUEString(); //itemType
+                    r.ReadByte(); //terminator
                     return r.BaseStream.Length - r.BaseStream.Position;
                 });
+
                 GameData.Properties.Add(GvasRawArray);
             }
 
+            // None
             GameData.Properties.Add(new UENoneProperty());
+
 
             File.WriteAllText($"{Config.LibraryPath}\\gvas.json", JsonConvert.SerializeObject(GameData));
 
@@ -181,20 +219,17 @@ namespace TSW3LM
                 set { ((UEStringProperty)GvasBaseProperty.Properties.First(p => p is UEStringProperty)).Value = value; }
             }
 
-            internal bool Compressed { get; set; }
+            internal string Type { get; set; }
 
             internal UEGenericStructProperty GvasBaseProperty;
 
-            internal Livery(UEGenericStructProperty baseProp, bool compressed)
+            internal Livery(UEGenericStructProperty baseProp, string type)
             {
                 GvasBaseProperty = baseProp;
-                Compressed = compressed;
+                Type = type;
 
                 Log.Message($"Livery {ID} loaded successfully", "G:Livery:<init>", Log.LogLevel.DEBUG);
             }
-
-
         }
-
     }
 }
