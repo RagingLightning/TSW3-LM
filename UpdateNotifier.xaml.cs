@@ -23,6 +23,7 @@ namespace TSW3LM
 
         public UpdateNotifier(string installed, string update, string link)
         {
+            Owner = Application.Current.MainWindow;
             InitializeComponent();
             lblInstalled.Content = installed;
             lblNew.Content = update;

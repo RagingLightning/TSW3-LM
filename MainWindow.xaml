@@ -41,10 +41,11 @@
         <Button Content="View/Edit Info >" HorizontalAlignment="Center" Height="20" Margin="0,125,0,0" VerticalAlignment="Top" Width="108" Click="btnInfo_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
         <!--<Button Content="*.tsw2liv Import 🡒" HorizontalAlignment="Center" Height="20" Margin="0,170,0,0" VerticalAlignment="Top" Width="108" Click="btnTsw2Import_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>-->
         <Button Content="RESTORE" HorizontalAlignment="Center" Height="41" Margin="0,63,0,0" VerticalAlignment="Top" Width="108" Click="btnRestore_Click" IsEnabled="{Binding Useable}" Grid.Column="1"/>
-        <Label x:Name="lblMessage" Height="80" Margin="20,0,20,20" VerticalAlignment="Bottom" Grid.ColumnSpan="3" Grid.Row="1"/>
+        <Label x:Name="lblMessage" Height="80" Margin="20,0,65,20" VerticalAlignment="Bottom" Grid.ColumnSpan="3" Grid.Row="1"/>
         <Button Height="34" Margin="0,4,95,0" VerticalAlignment="Top" Click="btnReset_Click" Grid.Row="1" HorizontalAlignment="Right" Width="240" Content="REFRESH" IsEnabled="{Binding Useable}"/>
         <Button Content="SAVE" Height="34" Margin="280,4,280,0" VerticalAlignment="Top" Click="btnSave_Click" IsEnabled="{Binding Useable}" Grid.ColumnSpan="3" Grid.Row="1" Width="240"/>
         <Button Content="DELETE" Height="34" Margin="95,4,0,0" VerticalAlignment="Top" Click="btnDelete_Click" IsEnabled="{Binding Useable}" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Left" Width="240"/>
+        <Button Content="Options" Height="20" Margin="0,0,10,25" VerticalAlignment="Bottom" Click="btnOptions_Click" Grid.Column="2" Grid.Row="1" HorizontalAlignment="Right" Width="50"/>
 
     </Grid>
 </Window>

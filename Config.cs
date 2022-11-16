@@ -1,15 +1,13 @@
 ﻿#nullable disable warnings
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Media.Animation;
 
 namespace TSW3LM
 {
     static class Config
     {
-        private static Entries entries = null;
+        internal static Entries entries = null;
 
         private static string Path;
 
@@ -46,10 +44,13 @@ namespace TSW3LM
             get { return entries.LibraryPath; }
             set { entries.LibraryPath = value; if (!entries.SkipAutosave) Save(); }
         }
-        public static bool NoUpdate
+
+        [JsonIgnore]
+        public static bool NoUpdate { set => AutoUpdate = !value; }
+        public static bool AutoUpdate
         {
-            get { return entries.NoUpdate; }
-            set { entries.NoUpdate = value; if (!entries.SkipAutosave) Save(); }
+            get { return entries.AutoUpdate; }
+            set { entries.AutoUpdate = value; if (!entries.SkipAutosave) Save(); }
         }
 
         public static bool DevUpdates
@@ -64,13 +65,14 @@ namespace TSW3LM
             set { entries.MaxGameLiveries = value; if (!entries.SkipAutosave) Save(); }
         }
 
+        [JsonIgnore]
         public static bool CollectLiveryData
         {
             get { return entries.CollectLiveryData; }
             set { entries.CollectLiveryData = value; if (!entries.SkipAutosave) Save(); }
         }
 
-        private static void Save()
+        internal static void Save()
         {
             Log.Message("Saving Config...", "Config:Save", Log.LogLevel.DEBUG);
             File.WriteAllText(Path, JsonConvert.SerializeObject(entries, new JsonSerializerSettings { Formatting = Formatting.Indented }));
@@ -83,22 +85,32 @@ namespace TSW3LM
             Save();
         }
 
-        private class Entries
+        internal class Entries
         {
             public bool SkipAutosave = false;
             public string GamePath = "";
             public string LibraryPath = "";
-            public bool NoUpdate = false;
+            public bool AutoUpdate = true;
             public bool DevUpdates = false;
             public int MaxGameLiveries = 300;
             public bool CollectLiveryData = true;
+
+            public static readonly Dictionary<string, string> DEFAULTS = new Dictionary<string, string>
+            {
+                { "SkipAutosave", "false" },
+                {"GamePath", "\"\"" },
+                {"LibraryPath","\"\"" },
+                {"AutoUpdate","true" },
+                {"DevUpdates","false" },
+                {"MaxGameLiveries","300" }
+            };
 
             internal void ApplyDefaults()
             {
                 SkipAutosave = false;
                 GamePath = "";
                 LibraryPath = "";
-                NoUpdate = false;
+                AutoUpdate = true;
                 DevUpdates = false;
                 MaxGameLiveries = 300;
                 CollectLiveryData = true;

@@ -92,6 +92,59 @@ namespace TSW3LM
             return null;
         }
 
+        internal static string DetermineWindowsStoreSaveFile()
+        {
+            string saveFilePath = Environment.GetEnvironmentVariable("LocalAppData") + "\\Packages";
+            string containerFilePath;
+            string pattern = "<n/a>";
+            try
+            {
+                pattern = "DovetailGames.TrainSimWorld2021_*";
+                saveFilePath = Directory.EnumerateDirectories(saveFilePath, pattern).First();
+                Log.Message($"Found TrainSimWorld2021 package at '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
+                saveFilePath += "\\SystemAppData\\wgs";
+                pattern = "*_*";
+                saveFilePath = Directory.EnumerateDirectories(saveFilePath, pattern).First();
+                pattern = "*";
+                saveFilePath = Directory.EnumerateDirectories(saveFilePath, pattern).First();
+                pattern = "container.*";
+                containerFilePath = Directory.EnumerateFiles(saveFilePath, pattern).First();
+            }
+            catch (Exception)
+            {
+                Log.Message($"couldn't find pattern '{pattern}' in '{saveFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
+                return "";
+            }
+            Log.Message($"container idx file is at '{containerFilePath}'", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.DEBUG);
+            try
+            {
+                byte[] containerFile = File.ReadAllBytes(containerFilePath);
+
+                byte[] key = new byte[] { 0x55, 0, 0x47, 00, 0x43, 00, 0x4c, 00, 0x69, 00, 0x76, 00, 0x65, 00, 0x72, 00, 0x69, 00, 0x65, 00, 0x73, 00, 0x5f, 00, 0x30, 00 };
+                int start = Utils.LocateInByteArray(containerFile, key);
+                int idx = start + key.Length;
+
+                while (containerFile[idx] == 0) idx++;
+
+                string fileBuilder = BitConverter.ToString(new byte[] { containerFile[idx + 3], containerFile[idx + 2], containerFile[idx + 1], containerFile[idx] });
+                idx += 4;
+                fileBuilder += BitConverter.ToString(new byte[] { containerFile[idx + 1], containerFile[idx] });
+                idx += 2;
+                fileBuilder += BitConverter.ToString(new byte[] { containerFile[idx + 1], containerFile[idx] });
+                idx += 2;
+                fileBuilder += BitConverter.ToString(new byte[] { containerFile[idx++], containerFile[idx++], containerFile[idx++], containerFile[idx++], containerFile[idx++], containerFile[idx++], containerFile[idx++], containerFile[idx++] });
+                fileBuilder = fileBuilder.ToUpper().Replace("-", "");
+                saveFilePath += "\\" + fileBuilder;
+            }
+            catch (Exception)
+            {
+                Log.Message($"Unable to parse container idx file", "MW::DetermineWindowsStoreSaveFile", Log.LogLevel.WARNING);
+                return "";
+            }
+            Log.Message($"Liveries file is at '{saveFilePath}'");
+            return saveFilePath;
+        }
+
         /// <summary>searches a byte array for a given sequence of bytes</summary>
         /// <param name="hay">The hay stack to be searched</param>
         /// <param name="needle">The needle</param>
