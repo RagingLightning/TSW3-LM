@@ -32,14 +32,6 @@ namespace TSW3LM
                         throw new FormatException("Library livery could not be deserialized");
                     livery.FileName = file.Name;
 
-                    if (!livery.Compressed)
-                    {
-                        // TSW3 expects compressed liveries only, so if we have an uncompressed .tsw3 file,
-                        // compress it on the fly
-                        livery.GvasBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
-                        livery.Compressed = true;
-                    }
-
                     while (Liveries.ContainsKey(i)) i++;
 
                     Liveries.Add(i, livery);
@@ -86,7 +78,7 @@ namespace TSW3LM
         {
             Log.Message($"Saving library livery {livery.Id}", "L:Save");
 
-            if (livery.Compressed)
+            if (livery.Type == LiveryType.COMPRESSED_TSW3)
             {
                 try
                 {
@@ -95,7 +87,7 @@ namespace TSW3LM
                     if (decompressed != null)
                     {
                         livery.GvasBaseProperty = decompressed.GvasBaseProperty;
-                        livery.Compressed = false;
+                        livery.Type = LiveryType.UNCOMPRESSED_TSW3;
                     }
                 }
                 catch (Exception e)
@@ -130,18 +122,18 @@ namespace TSW3LM
             }
             public string Name { get; set; }
             public string Model { get; set; }
-            public bool Compressed { get; set; }
+            public string Type { get; set; }
 
 
             public UEGenericStructProperty GvasBaseProperty;
 
-            public Livery(string fileName, UEGenericStructProperty property, string name = "<unnamed>", string model = "<unknown>", bool compressed = true)
+            public Livery(string fileName, UEGenericStructProperty property, string type, string name = "<unnamed>", string model = "<unknown>")
             {
                 FileName = fileName;
-                GvasBaseProperty = property;
                 Name = name;
                 Model = model;
-                Compressed = compressed;
+                Type = type;
+                GvasBaseProperty = property;
             }
 
             internal Livery()
@@ -150,7 +142,7 @@ namespace TSW3LM
                 GvasBaseProperty = new UEGenericStructProperty();
                 Name = string.Empty;
                 Model = string.Empty;
-                Compressed = true;
+                Type = LiveryType.COMPRESSED_TSW3;
             }
         }
 

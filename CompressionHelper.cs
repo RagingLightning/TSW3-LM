@@ -21,7 +21,7 @@ namespace TSW3LM
             if (byteString == null)
                 return null;
 
-            var byteArray = Utils.StringToByteArray(byteString.Value);
+            var byteArray = Utils.HexStringToByteArray(byteString.Value);
             using var memoryStream = new MemoryStream(byteArray);
             using var binaryReader = new BinaryReader(memoryStream);
 
@@ -121,7 +121,7 @@ namespace TSW3LM
             // Serialize the thing back to a string
             compressedMemoryStream.Position = 0;
             var compressedBytes = compressedMemoryStream.ToArray();
-            var compressedString = Utils.ByteArrayToString(compressedBytes);
+            var compressedString = Utils.ByteArrayToHexString(compressedBytes);
 
             // And build the result
             var idProperty = structProperty.Properties.Find(p => p.Name == "ID");

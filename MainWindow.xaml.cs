@@ -222,12 +222,19 @@ namespace TSW3LM
             for (int i = 0; i < Config.MaxGameLiveries; i++)
             {
                 if (!Game.Liveries.ContainsKey(i))
-                    lstGameLiveries.Items.Add($"({i+1}) <empty>");
+                    lstGameLiveries.Items.Add($"({i + 1}) <empty>");
                 else
                 {
                     string Id = Game.Liveries[i].ID;
                     GameLiveryInfo.Info Info = GameLiveryInfo.Get(Id);
-                    string Text = Game.Liveries[i].Compressed ? $"({i + 1}) {Info.Name} for {Info.Model}" : $"({i+1}) [RAW] {Info.Name} for {Info.Model}";
+                    string Text = $"({i + 1}) {Info.Name} for {Info.Model}";
+                    switch (Game.Liveries[i].Type)
+                    {
+                        case LiveryType.COMPRESSED_TSW3: break;
+                        case LiveryType.UNCOMPRESSED_TSW3: Text += " [R]"; break;
+                        case LiveryType.CONVERTED_FROM_TSW2: Text += " [2]"; break;
+                        default: Text = "[x] " + Text; break;
+                    }
                     lstGameLiveries.Items.Add(Text);
                     Log.Message($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
                 }
@@ -257,7 +264,7 @@ namespace TSW3LM
                 tab_Tsw2.IsSelected = true;
                 Log.Message("Updating TSW2 liveries in GUI...", "MW:UpdateLiveryGui");
                 lstLibraryLiveries.Items.Clear();
-                foreach(FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
+                foreach (FileInfo f in new DirectoryInfo(Config.LibraryPath).GetFiles("*.tsw2liv"))
                 {
                     try
                     {
@@ -289,7 +296,7 @@ namespace TSW3LM
                 Library.Save(ll);
             }
 
-            Game.Add(new Game.Livery(ll.GvasBaseProperty, ll.Compressed));
+            Game.Add(new Game.Livery(ll.GvasBaseProperty, ll.Type));
             Log.Message($"Livery successfully imported (ID: {ll.Id})", "MW:ImportLivery", Log.LogLevel.DEBUG);
             ShowStatusText("Livery successfully imported");
         }
@@ -334,8 +341,8 @@ namespace TSW3LM
                 SaveFileDialog Dialog = new SaveFileDialog
                 {
                     InitialDirectory = Config.LibraryPath,
-                    Filter = $"TSW3 Livery File (*.tsw3)|*.tsw3",
-                    DefaultExt = $"*.tsw3"
+                    Filter = "TSW3 Livery File (*.tsw3)|*.tsw3",
+                    DefaultExt = "*.tsw3"
                 };
                 if (Dialog.ShowDialog() == true)
                     fileName = Utils.SanitizeFileName(Dialog.SafeFileName);
@@ -347,7 +354,7 @@ namespace TSW3LM
                 }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model, gl.Compressed);
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model, gl.Type);
             Library.Add(ll);
             Library.Save(ll);
 
