@@ -13,6 +13,8 @@ namespace TSW3LM
 {
     internal class CompressionHelper
     {
+        private static readonly byte[] Signature = { 0xc1, 0x83, 0x2a, 0x9e };
+
         public static Game.Livery? DecompressReskin(UEGenericStructProperty structProperty)
         {
             var compressedReskin = structProperty.Properties.FirstOrDefault(p => p is UEArrayProperty && p.Name == "CompressedReskin") as UEArrayProperty;
@@ -24,55 +26,16 @@ namespace TSW3LM
             var byteArray = Utils.HexStringToByteArray(byteString.Value);
             using var memoryStream = new MemoryStream(byteArray);
             using var binaryReader = new BinaryReader(memoryStream);
+            var bytes = new List<byte>();
 
-            // first 16 bytes are bullshit we can ignore
-            var headerBytes = new byte[16];
-            binaryReader.Read(headerBytes, 0, 16);
-
-            // next 8 bytes store compressed size
-            var compressedSize = binaryReader.ReadInt64();
-            var input = new byte[compressedSize];
-
-            // next 8 bytes store decompressed size
-            var decompressedSize = binaryReader.ReadInt64();
-            var output = new byte[decompressedSize];
-
-            // for whatever reason they repeat the previous 16 bytes, we disregard this
-            binaryReader.ReadInt64();
-            binaryReader.ReadInt64();
-
-            Log.Message("reading compressed file");
-
-            // now begins the actual reading
-
-            // the input will be however long the input file length is
-            for (int i = 0; i < input.Length; i++)
+            do
             {
-                input[i] = binaryReader.ReadByte();
-            }
+                var chunk = ReadChunk(binaryReader);
+                bytes.AddRange(chunk);
+            } while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length);
 
-            // decompress using zlib
-            var inflater = new Inflater();
-
-            // do stuff I saw in the java docs
-            inflater.SetInput(input, 0, input.Length);
-
-            Log.Message("Decompressing using zlib");
-
-            try
-            {
-                var resultLength = inflater.Inflate(output);
-                inflater.Reset();
-
-                Log.Message("Length of decompressed: " + resultLength);
-            }
-            catch (Exception e)
-            {
-                Log.Exception("Failed inflating", e);
-                return null;
-            }
-
-            var decompressedLivery = Utils.ConvertTSW3(output, true);
+            var livery = bytes.ToArray();
+            var decompressedLivery = Utils.ConvertTSW3(livery, true);
             return decompressedLivery;
         }
 
@@ -154,7 +117,7 @@ namespace TSW3LM
                     new UENoneProperty()
                 }
             };
-            
+
             compressedProperty.ValueLength = Utils.DetermineValueLength(compressedProperty, r =>
             {
                 r.ReadUEString(); //name
@@ -168,5 +131,66 @@ namespace TSW3LM
 
             return compressedProperty;
         }
+
+        private static byte[] ReadChunk(BinaryReader binaryReader)
+        {
+            // First portion contains the signature
+            var headerBytes = binaryReader.ReadBytes(4);
+
+            if (!headerBytes.SequenceEqual(Signature))
+                throw new InvalidOperationException($"Invalid signature. Got {BitConverter.ToString(headerBytes)}, expected {BitConverter.ToString(Signature)}");
+
+            // The next 4 bytes are a spacer which can be ignored.
+            binaryReader.ReadBytes(4);
+
+            // Then comes the maximum chunk size
+            var maximumChunkSize = binaryReader.ReadInt64();
+
+            // next 8 bytes store compressed size
+            var compressedSize = binaryReader.ReadInt64();
+            var input = new byte[compressedSize];
+
+            // next 8 bytes store decompressed size
+            var decompressedSize = binaryReader.ReadInt64();
+            var output = new byte[decompressedSize];
+
+            // for whatever reason they repeat the previous 16 bytes, we disregard this
+            binaryReader.ReadInt64();
+            binaryReader.ReadInt64();
+
+            Log.Message("reading compressed file");
+
+            // now begins the actual reading
+
+            // the input will be however long the input file length is
+            for (int i = 0; i < input.Length; i++)
+            {
+                input[i] = binaryReader.ReadByte();
+            }
+
+            // decompress using zlib
+            var inflater = new Inflater();
+
+            // do stuff I saw in the java docs
+            inflater.SetInput(input, 0, input.Length);
+
+            Log.Message("Decompressing using zlib");
+
+            try
+            {
+                var resultLength = inflater.Inflate(output);
+                inflater.Reset();
+
+                Log.Message("Length of decompressed: " + resultLength);
+            }
+            catch (Exception e)
+            {
+                Log.Exception("Failed inflating", e);
+                throw;
+            }
+
+            return output;
+        }
+
     }
 }
