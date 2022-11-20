@@ -354,7 +354,7 @@ namespace TSW3LM
                 }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model, gl.Type);
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, name: info.Name, model: info.Model, type: gl.Type);
             Library.Add(ll);
             Library.Save(ll);
 
@@ -387,7 +387,7 @@ namespace TSW3LM
             new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
         }
 
-        
+
 
         private void btnExport_Click(object sender, RoutedEventArgs e)
         {
