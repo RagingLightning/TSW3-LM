@@ -231,7 +231,8 @@ namespace TSW3LM
                     switch (Game.Liveries[i].Type)
                     {
                         case LiveryType.COMPRESSED_TSW3: break;
-                        case LiveryType.UNCOMPRESSED_TSW3: Text += " [R]"; break;
+                        case LiveryType.UNCOMPRESSED_TSW3: Text += " [U]"; break;
+                        case LiveryType.DESERIALIZED_TSW3: Text += " [D]"; break;
                         case LiveryType.CONVERTED_FROM_TSW2: Text += " [2]"; break;
                         default: Text = "[x] " + Text; break;
                     }

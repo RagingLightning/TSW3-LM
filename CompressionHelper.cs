@@ -57,6 +57,19 @@ namespace TSW3LM
             bytes.Insert(2, 0);
             bytes.Insert(3, 0);
 
+            var idProperty = structProperty.Properties.Find(p => p.Name == "ID");
+
+            return CompressReskin(idProperty, bytes);
+        }
+
+        public static UEGenericStructProperty CompressReskin(UEProperty idProperty, IEnumerable<byte> bytes)
+        {
+            if(idProperty == null)
+                throw new ArgumentNullException(nameof(idProperty));
+
+            if (idProperty.Name != "ID")
+                throw new ArgumentException("Property is not an ID property", nameof(idProperty));
+
             var chunks = bytes.Chunk(MaximumChunkSize);
             using var outputByteStream = new MemoryStream();
 
@@ -72,8 +85,6 @@ namespace TSW3LM
             var compressedString = Utils.ByteArrayToHexString(compressedBytes);
 
             // And build the result
-            var idProperty = structProperty.Properties.Find(p => p.Name == "ID");
-
             var arrayProperty = new UEArrayProperty
             {
                 Name = "CompressedReskin",

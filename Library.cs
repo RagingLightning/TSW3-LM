@@ -42,6 +42,31 @@ namespace TSW3LM
                 }
             }
 
+            foreach (FileInfo file in Info.GetFiles("*.tsw3bin", SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    var bytes = File.ReadAllBytes(file.FullName);
+                    var decompressed = Utils.ConvertTSW3(bytes, false);
+                    string name = ((UETextProperty)decompressed.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
+                    string model = ((UEStringProperty)decompressed.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
+                    var idProperty = decompressed.GvasBaseProperty.Properties.Find(p => p.Name == "ID");
+                    var compressed = CompressionHelper.CompressReskin(idProperty, bytes);
+                    
+                    var livery = new Livery(file.FullName, compressed, LiveryType.UNCOMPRESSED_TSW3, name: name, model: model);
+                    if (livery == null)
+                        throw new FormatException("Library livery could not be deserialized");
+                    
+                    while (Liveries.ContainsKey(i)) i++;
+
+                    Liveries.Add(i, livery);
+                }
+                catch (Exception e)
+                {
+                    Log.Exception($"Error while loading livery {file.Name}!", e, "L:Load", Log.LogLevel.WARNING);
+                }
+            }
+
             /*Log.AddLogMessage($"Loading TSW2LM-Liveries...", "L:Load", Log.LogLevel.DEBUG);
             foreach (FileInfo file in Info.GetFiles("*.tsw2liv"))
             {
@@ -78,22 +103,31 @@ namespace TSW3LM
         {
             Log.Message($"Saving library livery {livery.Id}", "L:Save");
 
-            if (livery.Type == LiveryType.COMPRESSED_TSW3)
-            {
-                try
-                {
+            //if (livery.Type == LiveryType.COMPRESSED_TSW3)
+            //{
+            //    try
+            //    {
+            //        var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
+            //        if (decompressed != null)
+            //        {
+            //            livery.GvasBaseProperty = decompressed.GvasBaseProperty;
+            //            livery.Type = LiveryType.DESERIALIZED_TSW3;
+            //        }
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Log.Exception("Could not decompress livery " + livery.Name, e);
+            //    }
+            //}
 
-                    var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
-                    if (decompressed != null)
-                    {
-                        livery.GvasBaseProperty = decompressed.GvasBaseProperty;
-                        livery.Type = LiveryType.UNCOMPRESSED_TSW3;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Exception("Could not decompress livery " + livery.Name, e);
-                }
+            if (livery.Type == LiveryType.UNCOMPRESSED_TSW3
+                && CompressionHelper.DecompressReskin(livery.GvasBaseProperty) is Game.Tsw3UncompressedLivery uncompressedLivery)
+            {
+                livery.FileName = Path.ChangeExtension(livery.FileName, ".tsw3bin");
+
+                var path = Path.Combine(Config.LibraryPath, livery.FileName);
+                File.WriteAllBytes(path, uncompressedLivery.Bytes);
+                return;
             }
 
             try

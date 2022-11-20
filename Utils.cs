@@ -214,8 +214,8 @@ namespace TSW3LM
             bytes.RemoveRange(0, 3);
             bytes.RemoveAt(bytes.Count - 1);
 
-            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.UNCOMPRESSED_TSW3);
-            return livery;
+            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.DESERIALIZED_TSW3);
+            return new Game.Tsw3UncompressedLivery(livery, tsw3Data);
         }
 
         internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError, string liveryType)
@@ -401,6 +401,7 @@ namespace TSW3LM
     {
         public const string COMPRESSED_TSW3 = "COMPRESSED_TSW3";
         public const string UNCOMPRESSED_TSW3 = "UNCOMPRESSED_TSW3";
+        public const string DESERIALIZED_TSW3 = "DESERIALIZED_TSW3";
         public const string CONVERTED_FROM_TSW2 = "CONVERTED_FROM_TSW2";
 
         internal static string Get(string v)
@@ -409,6 +410,7 @@ namespace TSW3LM
             {
                 case COMPRESSED_TSW3: return COMPRESSED_TSW3;
                 case UNCOMPRESSED_TSW3: return UNCOMPRESSED_TSW3;
+                case DESERIALIZED_TSW3: return DESERIALIZED_TSW3;
                 case CONVERTED_FROM_TSW2: return CONVERTED_FROM_TSW2;
                 default: throw new ArgumentException("Livery is of unknown type " + v);
             }
@@ -518,7 +520,7 @@ namespace TSW3LM
             if (jo.ContainsKey("Type"))
                 livery.Type = LiveryType.Get(jo["Type"].ToString());
             else
-                livery.Type = livery.GvasBaseProperty.Properties.Any(p => p.Name == "DisplayName") ? LiveryType.UNCOMPRESSED_TSW3 : LiveryType.COMPRESSED_TSW3;
+                livery.Type = livery.GvasBaseProperty.Properties.Any(p => p.Name == "DisplayName") ? LiveryType.DESERIALIZED_TSW3 : LiveryType.COMPRESSED_TSW3;
             return livery;
 #pragma warning restore CS8602,CS8600,CS8604
         }
