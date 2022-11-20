@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace TSW3LM
     internal class CompressionHelper
     {
         private static readonly byte[] Signature = { 0xc1, 0x83, 0x2a, 0x9e };
+        private static readonly int MaximumChunkSize = 131072;
 
         public static Game.Livery? DecompressReskin(UEGenericStructProperty structProperty)
         {
@@ -50,40 +52,23 @@ namespace TSW3LM
             var bytes = ms.ToArray().ToList();
 
             // Re-add the bytes necessary for a TSW3 livery
-            bytes.Insert(0, 85);
-            bytes.Insert(1, 7);
+            bytes.Insert(0, 158);
+            bytes.Insert(1, 224);
             bytes.Insert(2, 0);
             bytes.Insert(3, 0);
 
-            // Deflate
+            var chunks = bytes.Chunk(MaximumChunkSize);
             using var outputByteStream = new MemoryStream();
-            using var deflater = new DeflaterOutputStream(outputByteStream);
-            var byteArray = bytes.ToArray();
-            deflater.Write(byteArray, 0, byteArray.Length);
-            deflater.Finish();
+
+            foreach (var chunk in chunks)
+            {
+                var compressed = CompressChunk(chunk);
+                outputByteStream.Write(compressed);
+            }
+
+            // Deflate
             outputByteStream.Position = 0;
-            var deflatedBytes = outputByteStream.ToArray();
-
-
-            // Now reassemble the whole thing
-            var header = new byte[] { 193, 131, 42, 158, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0 };
-            using var compressedMemoryStream = new MemoryStream();
-            using var compressedWriter = new BinaryWriter(compressedMemoryStream);
-
-            compressedWriter.Write(header, 0, header.Length);
-
-            // Write the compressed bytes (twice)
-            compressedWriter.WriteInt64(deflatedBytes.Length);
-            compressedWriter.WriteInt64(byteArray.Length);
-            compressedWriter.WriteInt64(deflatedBytes.Length);
-            compressedWriter.WriteInt64(byteArray.Length);
-
-            // Write the body
-            compressedWriter.Write(deflatedBytes, 0, deflatedBytes.Length);
-
-            // Serialize the thing back to a string
-            compressedMemoryStream.Position = 0;
-            var compressedBytes = compressedMemoryStream.ToArray();
+            var compressedBytes = outputByteStream.ToArray();
             var compressedString = Utils.ByteArrayToHexString(compressedBytes);
 
             // And build the result
@@ -190,6 +175,40 @@ namespace TSW3LM
             }
 
             return output;
+        }
+
+        private static byte[] CompressChunk(byte[] input)
+        {
+            using var deflateStream = new MemoryStream();
+            using var deflater = new DeflaterOutputStream(deflateStream);
+
+            deflater.Write(input, 0, input.Length);
+            deflater.Finish();
+
+            // Now reassemble the whole thing
+            var header = new byte[] { 0xC1, 0x83, 0x2A, 0x9E, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0 };
+            deflateStream.Position = 0;
+            var compressedBytes = deflateStream.ToArray();
+
+            using var compressedStream = new MemoryStream();
+            using var compressedWriter = new BinaryWriter(compressedStream);
+            compressedWriter.Write(Signature);
+            compressedWriter.Write(new byte[] { 0x00, 0x00, 0x00, 0x00, });
+
+            // Write the compressed bytes (twice)
+            compressedWriter.WriteInt64(MaximumChunkSize);
+            compressedWriter.WriteInt64(compressedBytes.Length);
+            compressedWriter.WriteInt64(input.Length);
+            compressedWriter.WriteInt64(compressedBytes.Length);
+            compressedWriter.WriteInt64(input.Length);
+
+            // Write the body
+            compressedWriter.Write(compressedBytes);
+
+            // Serialize the thing back to a string
+            compressedStream.Position = 0;
+            var result = compressedStream.ToArray();
+            return result;
         }
 
     }
