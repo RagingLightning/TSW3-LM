@@ -50,22 +50,22 @@ namespace TSW3LM
             structProperty.SerializeStructProp(writer);
 
             ms.Position = 0;
-            var bytes = ms.ToArray().ToList();
+            var bytes = ms.ToArray();
 
-            // Re-add the bytes necessary for a TSW3 livery
-            bytes.Insert(0, 0x9e);
-            bytes.Insert(1, 0xe0);
-            bytes.Insert(2, 0x08);
-            bytes.Insert(3, 0);
-
+            using var byteStream = new MemoryStream();
+            using var byteWriter = new BinaryWriter(byteStream);
+            byteWriter.WriteInt32(bytes.Length);
+            byteWriter.Write(bytes);
             var idProperty = structProperty.Properties.Find(p => p.Name == "ID");
 
+            byteStream.Position = 0;
+            bytes = byteStream.ToArray();
             return CompressReskin(idProperty, bytes);
         }
 
         public static UEGenericStructProperty CompressReskin(UEProperty idProperty, IEnumerable<byte> bytes)
         {
-            if(idProperty == null)
+            if (idProperty == null)
                 throw new ArgumentNullException(nameof(idProperty));
 
             if (idProperty.Name != "ID")

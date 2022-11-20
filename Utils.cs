@@ -211,7 +211,11 @@ namespace TSW3LM
         internal static Game.Livery? ConvertTSW3(byte[] tsw3Data, bool catchFormatError)
         {
             var bytes = tsw3Data.ToList();
+
+            // First 4 bytes are the lenght of the livery - not relevant for us
             bytes.RemoveRange(0, 3);
+
+            // Last byte is a null terminator, not relevant and ConvertTSW2 will re-add it
             bytes.RemoveAt(bytes.Count - 1);
 
             var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.DESERIALIZED_TSW3);
