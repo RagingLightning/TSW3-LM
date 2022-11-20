@@ -110,7 +110,7 @@ namespace TSW3LM
 
                             decompressedLivery.ID = newId;
 
-                            Liveries.Add(i, new Livery(structProperty, LiveryType.UNCOMPRESSED_TSW3));
+                            Liveries.Add(i, decompressedLivery);
                         }
 
                     }
@@ -140,16 +140,16 @@ namespace TSW3LM
 
         internal static void Save()
         {
-            List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Type == LiveryType.COMPRESSED_TSW3 || p.Type == LiveryType.UNCOMPRESSED_TSW3).Select(p => p.GvasBaseProperty).ToList();
+            List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Type == LiveryType.COMPRESSED_TSW3).Select(p => p.GvasBaseProperty).ToList();
             List<UEGenericStructProperty> raw = Liveries.Values.Where(p => p.Type == LiveryType.CONVERTED_FROM_TSW2).Select(p => p.GvasBaseProperty).ToList();
 
-            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3))
+            // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
+            // compress it before saving to disk
+            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3 || p.Type == LiveryType.UNCOMPRESSED_TSW3))
             {
-                // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
-                // compress it before saving to disk
-                livery.GvasBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
-                livery.Type = LiveryType.COMPRESSED_TSW3;
-                zip.Add(livery.GvasBaseProperty);
+                // Compress
+                var compressedBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
+                zip.Add(compressedBaseProperty);
             }
 
             GameData.Properties.Clear();
@@ -230,23 +230,6 @@ namespace TSW3LM
                 Type = type;
 
                 Log.Message($"Livery {ID} loaded successfully", "G:Livery:<init>", Log.LogLevel.DEBUG);
-            }
-        }
-
-        internal class Tsw3UncompressedLivery : Livery
-        {
-            public byte[] Bytes { get; }
-
-            internal Tsw3UncompressedLivery(UEGenericStructProperty baseProp, string type, byte[] bytes)
-                : base(baseProp, type)
-            {
-                Bytes = bytes;
-            }
-
-            public Tsw3UncompressedLivery(Livery baseProp, byte[] bytes) 
-                : base(baseProp.GvasBaseProperty, LiveryType.UNCOMPRESSED_TSW3)
-            {
-                Bytes = bytes;
             }
         }
     }

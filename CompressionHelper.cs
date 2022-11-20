@@ -15,7 +15,7 @@ namespace TSW3LM
     internal class CompressionHelper
     {
         private static readonly byte[] Signature = { 0xc1, 0x83, 0x2a, 0x9e };
-        private static readonly int MaximumChunkSize = 131072;
+        private static readonly int MaximumChunkSize = 131072; // 0x20000
 
         public static Game.Livery? DecompressReskin(UEGenericStructProperty structProperty)
         {
@@ -30,6 +30,7 @@ namespace TSW3LM
             using var binaryReader = new BinaryReader(memoryStream);
             var bytes = new List<byte>();
 
+            // Inflate chunks
             do
             {
                 var chunk = ReadChunk(binaryReader);
@@ -52,9 +53,9 @@ namespace TSW3LM
             var bytes = ms.ToArray().ToList();
 
             // Re-add the bytes necessary for a TSW3 livery
-            bytes.Insert(0, 158);
-            bytes.Insert(1, 224);
-            bytes.Insert(2, 0);
+            bytes.Insert(0, 0x9e);
+            bytes.Insert(1, 0xe0);
+            bytes.Insert(2, 0x08);
             bytes.Insert(3, 0);
 
             var idProperty = structProperty.Properties.Find(p => p.Name == "ID");
@@ -70,16 +71,18 @@ namespace TSW3LM
             if (idProperty.Name != "ID")
                 throw new ArgumentException("Property is not an ID property", nameof(idProperty));
 
+            // split livery into Chunks
             var chunks = bytes.Chunk(MaximumChunkSize);
             using var outputByteStream = new MemoryStream();
 
+            // Deflate Chunks
             foreach (var chunk in chunks)
             {
                 var compressed = CompressChunk(chunk);
                 outputByteStream.Write(compressed);
             }
 
-            // Deflate
+            // Encode for ByteProperty
             outputByteStream.Position = 0;
             var compressedBytes = outputByteStream.ToArray();
             var compressedString = Utils.ByteArrayToHexString(compressedBytes);
@@ -140,7 +143,9 @@ namespace TSW3LM
             binaryReader.ReadBytes(4);
 
             // Then comes the maximum chunk size
-            var maximumChunkSize = binaryReader.ReadInt64();
+            var liveryMaxChunkSize = binaryReader.ReadInt64();
+            if (liveryMaxChunkSize != MaximumChunkSize)
+                Log.Message($"Default chunk size is {MaximumChunkSize}, livery reports {liveryMaxChunkSize}", level: Log.LogLevel.WARNING);
 
             // next 8 bytes store compressed size
             var compressedSize = binaryReader.ReadInt64();
@@ -216,7 +221,6 @@ namespace TSW3LM
             // Write the body
             compressedWriter.Write(compressedBytes);
 
-            // Serialize the thing back to a string
             compressedStream.Position = 0;
             var result = compressedStream.ToArray();
             return result;
