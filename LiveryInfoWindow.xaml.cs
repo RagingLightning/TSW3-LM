@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Windows;
+using System.ComponentModel;
 
 namespace TSW3LM
 {
@@ -32,8 +33,27 @@ namespace TSW3LM
             InitializeComponent();
         }
 
+        // Event handler to stop the info window closing (when pressing X) and collapse the window visilibility instead
+        // This fixes the bug of TSW3LM crashing when opening another info window after pressing X
+        private void Close(object sender, CancelEventArgs e)
+        {
+            // Log.Message($"Info Window Close Event");
+
+            e.Cancel = true;
+            Visibility = Visibility.Collapsed;
+
+            if (Callback != null)
+            {
+                Callback.Invoke();
+                Callback = null;
+            }
+        }
+
+        // Event handler to collapse window visibility when pressing the close button
         private void Cancel(object sender, RoutedEventArgs e)
         {
+            // Log.Message($"Info Window Cancel Event");
+
             Visibility = Visibility.Collapsed;
 
             if (Callback != null)
