@@ -145,7 +145,7 @@ namespace TSW3LM
 
             // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
             // compress it before saving to disk
-            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3 || p.Type == LiveryType.UNCOMPRESSED_TSW3))
+            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3))
             {
                 // Compress
                 var compressedBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
