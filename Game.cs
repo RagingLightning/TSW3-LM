@@ -143,12 +143,13 @@ namespace TSW3LM
             List<UEGenericStructProperty> zip = Liveries.Values.Where(p => p.Type == LiveryType.COMPRESSED_TSW3).Select(p => p.GvasBaseProperty).ToList();
             List<UEGenericStructProperty> raw = Liveries.Values.Where(p => p.Type == LiveryType.CONVERTED_FROM_TSW2).Select(p => p.GvasBaseProperty).ToList();
 
-            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.UNCOMPRESSED_TSW3)) {
-                // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
-                // compress it before saving to disk
-                livery.GvasBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
-                livery.Type = LiveryType.COMPRESSED_TSW3;
-                zip.Add(livery.GvasBaseProperty);
+            // TSW3 expects compressed liveries only, so if we have an uncompressed tsw3 livery loaded,
+            // compress it before saving to disk
+            foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3))
+            {
+                // Compress
+                var compressedBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
+                zip.Add(compressedBaseProperty);
             }
 
             GameData.Properties.Clear();

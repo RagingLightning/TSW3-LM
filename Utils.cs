@@ -211,36 +211,46 @@ namespace TSW3LM
         internal static Game.Livery? ConvertTSW3(byte[] tsw3Data, bool catchFormatError)
         {
             var bytes = tsw3Data.ToList();
+
+            // First 4 bytes are the lenght of the livery - not relevant for us
             bytes.RemoveRange(0, 3);
+
+            // Last byte is a null terminator, not relevant and ConvertTSW2 will re-add it
             bytes.RemoveAt(bytes.Count - 1);
 
-            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.UNCOMPRESSED_TSW3);
+            var livery = ConvertTSW2(bytes.ToArray(), catchFormatError, LiveryType.DESERIALIZED_TSW3);
             return livery;
+            
         }
 
         internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError, string liveryType)
         {
             BinaryReader reader = new BinaryReader(new MemoryStream(data));
-            UEGenericStructProperty prop = new UEGenericStructProperty();
-            prop.StructType = "ReskinSave";
-            prop.Name = "Reskins";
-            prop.Type = "StructProperty";
+            UEGenericStructProperty prop = new UEGenericStructProperty
+            {
+                StructType = "ReskinSave",
+                Name = "Reskins",
+                Type = "StructProperty"
+            };
             while (UEProperty.Read(reader) is UEProperty p)
             {
                 prop.Properties.Add(p);
             }
 
-            try
+            if (liveryType == LiveryType.CONVERTED_FROM_TSW2)
             {
-                ValidateTsw2Import(prop);
-            }
-            catch (Exception e)
-            {
-                if (!catchFormatError)
-                    throw e;
-                else
+                try
                 {
-                    Log.Exception("Error converting TSW2 livery", e, "U:ConvertTSW2", Log.LogLevel.WARNING);
+                    ValidateTsw2Import(prop);
+                }
+                catch (Exception e)
+                {
+                    if (!catchFormatError)
+                        throw e;
+                    else
+                    {
+                        Log.Exception("Error converting TSW2 livery", e, "U:ConvertTSW2", Log.LogLevel.WARNING);
+                    }
                 }
             }
 
@@ -287,7 +297,7 @@ namespace TSW3LM
                     prop.Properties.Add(p2);
                 }
                 //last is UENone
-                if (!(t.Properties[t.Properties.Count - 1] is UENoneProperty)) t.Properties.Add(new UENoneProperty());
+                if (!(t.Properties[^1] is UENoneProperty)) t.Properties.Add(new UENoneProperty());
             }
             //ReskinEditorData
             UEGenericStructProperty prp = (UEGenericStructProperty)prop.Properties.First(p => p is UEGenericStructProperty && p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData");
@@ -400,7 +410,7 @@ namespace TSW3LM
     public class LiveryType
     {
         public const string COMPRESSED_TSW3 = "COMPRESSED_TSW3";
-        public const string UNCOMPRESSED_TSW3 = "UNCOMPRESSED_TSW3";
+        public const string DESERIALIZED_TSW3 = "DESERIALIZED_TSW3";
         public const string CONVERTED_FROM_TSW2 = "CONVERTED_FROM_TSW2";
 
         internal static string Get(string v)
@@ -408,7 +418,7 @@ namespace TSW3LM
             switch (v)
             {
                 case COMPRESSED_TSW3: return COMPRESSED_TSW3;
-                case UNCOMPRESSED_TSW3: return UNCOMPRESSED_TSW3;
+                case DESERIALIZED_TSW3: return DESERIALIZED_TSW3;
                 case CONVERTED_FROM_TSW2: return CONVERTED_FROM_TSW2;
                 default: throw new ArgumentException("Livery is of unknown type " + v);
             }
@@ -518,7 +528,7 @@ namespace TSW3LM
             if (jo.ContainsKey("Type"))
                 livery.Type = LiveryType.Get(jo["Type"].ToString());
             else
-                livery.Type = livery.GvasBaseProperty.Properties.Any(p => p.Name == "DisplayName") ? LiveryType.UNCOMPRESSED_TSW3 : LiveryType.COMPRESSED_TSW3;
+                livery.Type = livery.GvasBaseProperty.Properties.Any(p => p.Name == "DisplayName") ? LiveryType.DESERIALIZED_TSW3 : LiveryType.COMPRESSED_TSW3;
             return livery;
 #pragma warning restore CS8602,CS8600,CS8604
         }

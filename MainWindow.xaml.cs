@@ -231,9 +231,9 @@ namespace TSW3LM
                     switch (Game.Liveries[i].Type)
                     {
                         case LiveryType.COMPRESSED_TSW3: break;
-                        case LiveryType.UNCOMPRESSED_TSW3: Text += " [R]"; break;
+                        case LiveryType.DESERIALIZED_TSW3: Text += " [D]"; break;
                         case LiveryType.CONVERTED_FROM_TSW2: Text += " [2]"; break;
-                        default: Text = "[x] " + Text; break;
+                        default: Text = "[ERR] " + Text; break;
                     }
                     lstGameLiveries.Items.Add(Text);
                     Log.Message($"Added game livery {Text}", "MW:UpdateGameGui", Log.LogLevel.DEBUG);
@@ -354,7 +354,7 @@ namespace TSW3LM
                 }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, info.Name, info.Model, gl.Type);
+            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, name: info.Name, model: info.Model, type: gl.Type);
             Library.Add(ll);
             Library.Save(ll);
 
@@ -387,7 +387,7 @@ namespace TSW3LM
             new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
         }
 
-        
+
 
         private void btnExport_Click(object sender, RoutedEventArgs e)
         {

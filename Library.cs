@@ -1,14 +1,9 @@
-﻿using GvasConverter;
-using GvasFormat.Serialization;
-using GvasFormat.Serialization.UETypes;
-using Microsoft.Win32;
+﻿using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace TSW3LM
 {
@@ -42,35 +37,6 @@ namespace TSW3LM
                 }
             }
 
-            /*Log.AddLogMessage($"Loading TSW2LM-Liveries...", "L:Load", Log.LogLevel.DEBUG);
-            foreach (FileInfo file in Info.GetFiles("*.tsw2liv"))
-            {
-                try
-                {
-                    byte[] data = File.ReadAllBytes(file.FullName);
-                    for (int i = 0; i < data.Length; i++)
-                    {
-                        if (i + 1 == data.Length)
-                            data[i] = 0;
-                        else
-                            data[i] = data[i+1];
-                    }
-                    File.WriteAllBytes(file.FullName + ".tmp", data);
-
-                        List<UEProperty> properties = new List<UEProperty>();
-
-                    BinaryReader reader = new BinaryReader(File.Open(file.FullName + ".tmp", FileMode.Open, FileAccess.Read, FileShare.Read), Encoding.ASCII, true);
-                    while (UEProperty.Read(reader) is UEProperty prop) properties.Add(prop);
-
-                    Livery livery = new Livery(file.FullName, properties);
-
-                }
-                catch (Exception e)
-                {
-                    Log.AddLogMessage($"Error while loading livery {file.Name}: {e.Message}", "L:Load", Log.LogLevel.WARNING);
-                }
-            }*/
-
             Log.Message($"Library fully loaded", "L:Load", Log.LogLevel.DEBUG);
         }
 
@@ -78,23 +44,22 @@ namespace TSW3LM
         {
             Log.Message($"Saving library livery {livery.Id}", "L:Save");
 
-            if (livery.Type == LiveryType.COMPRESSED_TSW3)
-            {
-                try
-                {
-
-                    var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
-                    if (decompressed != null)
-                    {
-                        livery.GvasBaseProperty = decompressed.GvasBaseProperty;
-                        livery.Type = LiveryType.UNCOMPRESSED_TSW3;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Exception("Could not decompress livery " + livery.Name, e);
-                }
-            }
+            //if (livery.Type == LiveryType.COMPRESSED_TSW3)
+            //{
+            //    try
+            //    {
+            //        var decompressed = CompressionHelper.DecompressReskin(livery.GvasBaseProperty);
+            //        if (decompressed != null)
+            //        {
+            //            livery.GvasBaseProperty = decompressed.GvasBaseProperty;
+            //            livery.Type = LiveryType.DESERIALIZED_TSW3;
+            //        }
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Log.Exception("Could not decompress livery " + livery.Name, e);
+            //    }
+            //}
 
             try
             {
