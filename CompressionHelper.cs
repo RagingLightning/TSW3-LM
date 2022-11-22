@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Windows.Forms;
 using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using ICSharpCode.SharpZipLib.Zip.Compression;
@@ -20,9 +17,8 @@ namespace TSW3LM
         public static Game.Livery? DecompressReskin(UEGenericStructProperty structProperty)
         {
             var compressedReskin = structProperty.Properties.FirstOrDefault(p => p is UEArrayProperty && p.Name == "CompressedReskin") as UEArrayProperty;
-            var byteString = compressedReskin?.Items?.FirstOrDefault() as UEByteProperty;
 
-            if (byteString == null)
+            if (compressedReskin?.Items?.FirstOrDefault() is not UEByteProperty byteString)
                 return null;
 
             var byteArray = Utils.HexStringToByteArray(byteString.Value);
@@ -60,7 +56,9 @@ namespace TSW3LM
 
             byteStream.Position = 0;
             bytes = byteStream.ToArray();
-            return CompressReskin(idProperty, bytes);
+            if (idProperty != null)
+                return CompressReskin(idProperty, bytes);
+            throw new FormatException("Livery doesn't contain an ID-Property");
         }
 
         public static UEGenericStructProperty CompressReskin(UEProperty idProperty, IEnumerable<byte> bytes)

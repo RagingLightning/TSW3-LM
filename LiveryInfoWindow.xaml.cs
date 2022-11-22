@@ -70,7 +70,7 @@ namespace TSW3LM
             if (LiveryId != "<empty>")
             {
                 GameLiveryInfo.SetInfo(LiveryId, LiveryName, LiveryModel, true);
-                MainWindow.INSTANCE.UpdateGameGui();
+                MainWindow.INSTANCE?.UpdateGameGui();
             }
 
             if (Callback != null)

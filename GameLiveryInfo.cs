@@ -21,7 +21,7 @@ namespace TSW3LM
 
         internal static bool Running = true;
 
-        public static Dictionary<string, Info> Data = new Dictionary<string, Info>();
+        public static Dictionary<string, Info> Data = new();
 
         internal static bool NoAutoRefresh = false;
 
@@ -79,21 +79,21 @@ namespace TSW3LM
             }
         }
 
-        internal static Info? Get(string liveryId, ThreadStart? callback = null)
+        internal static Info Get(string liveryId, ThreadStart? callback = null)
         {
             if (callback != null)
             {
                 if (Data.ContainsKey(liveryId))
                 {
                     callback.Invoke();
-                    return null;
+                    return new Info();
                 }
                 LiveryInfoWindow.INSTANCE.LiveryId = liveryId;
                 LiveryInfoWindow.INSTANCE.LiveryName = "<unnamed>";
                 LiveryInfoWindow.INSTANCE.LiveryModel = "<unknown>";
                 LiveryInfoWindow.INSTANCE.Callback = callback;
                 LiveryInfoWindow.INSTANCE.Show();
-                return null;
+                return new Info();
             }
             if (Data.ContainsKey(liveryId))
                 return Data[liveryId];

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -7,13 +6,11 @@ namespace TSW3LM.Options
 {
     internal class OptionsTemplateSelector : DataTemplateSelector
     {
-        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        public override DataTemplate? SelectTemplate(object item, DependencyObject container)
         {
-            FrameworkElement element = container as FrameworkElement;
-
-            if (element != null && item != null && item is Option) {
-
-                Option optionItem = item as Option;
+            if (container is FrameworkElement element && item != null && item is Option)
+            {
+                if (item is not Option optionItem) return null;
 
                 switch (optionItem.Type)
                 {

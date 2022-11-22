@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#pragma warning disable IDE1006
 using System.Diagnostics;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace TSW3LM
 {
@@ -19,7 +10,7 @@ namespace TSW3LM
     public partial class UpdateNotifier : Window
     {
 
-        private string link;
+        private readonly string link;
 
         public UpdateNotifier(string installed, string update, string link)
         {
@@ -32,13 +23,13 @@ namespace TSW3LM
 
         private void close(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void download(object sender, RoutedEventArgs e)
         {
             Process.Start("explorer.exe", link);
-            this.Close();
+            Close();
         }
     }
 }

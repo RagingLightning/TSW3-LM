@@ -1,5 +1,4 @@
-﻿#nullable enable
-using GvasConverter;
+﻿using GvasConverter;
 using GvasFormat.Serialization;
 using GvasFormat.Serialization.UETypes;
 using Newtonsoft.Json;
@@ -9,32 +8,34 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace TSW3LM
 {
     static class Utils
     {
-        private static Random random = new Random();
+        private static readonly Random random = new();
 
         internal static string GenerateHex(int digits)
         {
             byte[] buffer = new byte[digits / 2];
             random.NextBytes(buffer);
-            string result = String.Concat(buffer.Select(x => x.ToString("X2")).ToArray());
+            string result = string.Concat(buffer.Select(x => x.ToString("X2")).ToArray());
             if (digits % 2 == 0)
                 return result;
             return result + random.Next(16).ToString("X");
         }
 
-        internal static string? CheckUpdate(string version)
+        internal static async Task<string?> CheckUpdate(string version)
         {
-            WebRequest UpdateRequest = WebRequest.Create("https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat");
-            string UpdateResponse = new StreamReader(UpdateRequest.GetResponse().GetResponseStream()).ReadToEnd();
-            Log.Message($"Got version information: {version}->{UpdateResponse}", "U:CheckUpdate", Log.LogLevel.DEBUG);
-            string[] NewVersion = UpdateResponse.Split('.');
-            string[] CurrentVersion = version.Split('.');
+            HttpResponseMessage updateRx = await new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat"));
+            var updateResponse = updateRx.Content.ToString();
+            if (updateResponse == null) return null;
+            Log.Message($"Got version information: {version}->{updateResponse}", "U:CheckUpdate", Log.LogLevel.DEBUG);
+            var NewVersion = updateResponse.Split('.');
+            var CurrentVersion = version.Split('.');
             char CurrentSuffix = ' ';
             if (!int.TryParse(CurrentVersion[^1], out int _))
             {
@@ -55,22 +56,23 @@ namespace TSW3LM
                 }
                 if (int.Parse(NewVersion[i]) != int.Parse(CurrentVersion[i])) fullVersionUpdate = false;
             }
-            if (update > 0 || (fullVersionUpdate && CurrentSuffix != ' ')) return UpdateResponse;
+            if (update > 0 || (fullVersionUpdate && CurrentSuffix != ' ')) return updateResponse;
             return null;
         }
 
-        internal static string? CheckDevUpdate(string version)
+        internal static async Task<string?> CheckDevUpdateAsync(string version)
         {
-            WebRequest UpdateRequest = WebRequest.Create("https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/devversion.dat");
-            string UpdateResponse = new StreamReader(UpdateRequest.GetResponse().GetResponseStream()).ReadToEnd();
-            Log.Message($"Got version information: {version}->{UpdateResponse}", "U:CheckDevUpdate", Log.LogLevel.DEBUG);
-            string[] NewVersion = UpdateResponse.Split('.');
+            HttpResponseMessage updateRx = await new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/devversion.dat"));
+            var updateResponse = updateRx.Content.ToString();
+            if (updateResponse == null) return null;
+            Log.Message($"Got version information: {version}->{updateResponse}", "U:CheckDevUpdate", Log.LogLevel.DEBUG);
+            string[] NewVersion = updateResponse.Split('.');
             string[] CurrentVersion = version.Split('.');
             char NewSuffix = ' ';
             char CurrentSuffix = ' ';
             if (!int.TryParse(NewVersion[^1], out int _))
             {
-                NewSuffix = UpdateResponse.Last();
+                NewSuffix = updateResponse.Last();
                 NewVersion[^1] = NewVersion[^1].Split(NewSuffix)[0];
             }
             if (!int.TryParse(CurrentVersion[^1], out int _))
@@ -88,7 +90,7 @@ namespace TSW3LM
                 }
                 if (int.Parse(NewVersion[i]) < int.Parse(CurrentVersion[i])) devUpdate = false;
             }
-            if (devUpdate || update) return UpdateResponse;
+            if (devUpdate || update) return updateResponse;
             return null;
         }
 
@@ -189,12 +191,12 @@ namespace TSW3LM
             else
             {
                 Log.Message("The program can continue, correct behaviour is not guaranteed though!", "EX", Log.LogLevel.ERROR);
-                MainWindow.INSTANCE.ShowStatusText("[ERR] Unhandled exception, please restart the program asap!");
+                MainWindow.INSTANCE?.ShowStatusText("[ERR] Unhandled exception, please restart the program asap!");
             }
             throw new NotImplementedException();
         }
 
-        internal static Game.Livery? ConvertTSW2(byte[] tsw2Data, bool catchFormatError, string liveryType = LiveryType.CONVERTED_FROM_TSW2)
+        internal static Game.Livery ConvertTSW2(byte[] tsw2Data, bool catchFormatError, string liveryType = LiveryType.CONVERTED_FROM_TSW2)
         {
             byte[] data = new byte[tsw2Data.Length];
             for (int i = 1; i <= tsw2Data.Length; i++)
@@ -223,10 +225,10 @@ namespace TSW3LM
             
         }
 
-        internal static Game.Livery? ByteArrayToLivery(byte[] data, bool catchFormatError, string liveryType)
+        internal static Game.Livery ByteArrayToLivery(byte[] data, bool catchFormatError, string liveryType)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(data));
-            UEGenericStructProperty prop = new UEGenericStructProperty
+            var reader = new BinaryReader(new MemoryStream(data));
+            var prop = new UEGenericStructProperty
             {
                 StructType = "ReskinSave",
                 Name = "Reskins",
@@ -239,19 +241,16 @@ namespace TSW3LM
 
             if (liveryType == LiveryType.CONVERTED_FROM_TSW2)
             {
+                if (catchFormatError)
                 try
                 {
                     ValidateTsw2Import(prop);
                 }
                 catch (Exception e)
                 {
-                    if (!catchFormatError)
-                        throw e;
-                    else
-                    {
-                        Log.Exception("Error converting TSW2 livery", e, "U:ConvertTSW2", Log.LogLevel.WARNING);
-                    }
+                    Log.Exception("Error converting TSW2 livery", e, "U:ConvertTSW2", Log.LogLevel.WARNING);
                 }
+                else ValidateTsw2Import(prop);
             }
 
             return new Game.Livery(prop, liveryType);
@@ -259,16 +258,16 @@ namespace TSW3LM
 
         internal static void ValidateTsw2Import(UEGenericStructProperty prop)
         {
-            //ID
-            prop.Properties.First(p => p is UEStringProperty && p.Type == "NameProperty" && p.Name == "ID" && ((UEStringProperty)p).Value.StartsWith("L_"));
-            //CreatedDate
-            prop.Properties.First(p => p is UEDateTimeStructProperty && p.Name == "CreatedDate");
-            //DisplayName
-            prop.Properties.First(p => p is UETextProperty && p.Name == "DisplayName");
-            //BaseDefinition
-            prop.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition" && p.Type == "SoftObjectProperty");
+            ////ID
+            //prop.Properties.First(p => p is UEStringProperty pr && pr.Type == "NameProperty" && pr.Name == "ID" && pr.Value.StartsWith("L_"));
+            ////CreatedDate
+            //prop.Properties.First(p => p is UEDateTimeStructProperty && p.Name == "CreatedDate");
+            ////DisplayName
+            //prop.Properties.First(p => p is UETextProperty && p.Name == "DisplayName");
+            ////BaseDefinition
+            //prop.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition" && p.Type == "SoftObjectProperty");
             //ReskinnedElements
-            UEArrayProperty reskinnedElements = ((UEArrayProperty)prop.Properties.First(p => p is UEArrayProperty && p.Name == "ReskinnedElements" && ((UEArrayProperty)p).ItemType == "StructProperty"));
+            UEArrayProperty reskinnedElements = (UEArrayProperty)prop.Properties.First(p => p is UEArrayProperty pr && pr.Name == "ReskinnedElements" && pr.ItemType == "StructProperty");
             foreach (UEGenericStructProperty t in reskinnedElements.Items.ToList())
             {
                 if (t.Name != "ReskinnedElements" || t.StructType != "DTGReskinEntry")
@@ -297,30 +296,30 @@ namespace TSW3LM
                     prop.Properties.Add(p2);
                 }
                 //last is UENone
-                if (!(t.Properties[^1] is UENoneProperty)) t.Properties.Add(new UENoneProperty());
+                if (t.Properties[^1] is not UENoneProperty) t.Properties.Add(new UENoneProperty());
             }
             //ReskinEditorData
-            UEGenericStructProperty prp = (UEGenericStructProperty)prop.Properties.First(p => p is UEGenericStructProperty && p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData");
+            UEGenericStructProperty prp = (UEGenericStructProperty)prop.Properties.First(p => p is UEGenericStructProperty pr && pr.Name == "ReskinEditorData" && pr.StructType == "DTGReskinEditData");
             foreach (UEProperty t in prp.Properties)
             {
-                if (t is UEArrayProperty && t.Name == "LastUsedColours" && ((UEArrayProperty)t).ItemType == "StructProperty")
+                if (t is UEArrayProperty pr && pr.Name == "LastUsedColours" && pr.ItemType == "StructProperty")
                 {
-                    if (((UEArrayProperty)t).Count != 0)
-                        foreach (UEProperty p2 in ((UEArrayProperty)t).Items.Where(p => !(p is UELinearColorStructProperty)).ToList())
+                    if (pr.Count != 0)
+                        foreach (UEProperty p2 in pr.Items.Where(p => p is not UELinearColorStructProperty).ToList())
                         {
                             if (IdentifyMisplacedProperty(p2) == Property.UNKNOWN) throw new FormatException($"LastUsedColours contains foreign property {p2.Name} (Type: {p2.GetType()})");
-                            List<UEProperty> tmp = ((UEArrayProperty)t).Items.ToList();
+                            List<UEProperty> tmp = pr.Items.ToList();
                             tmp.Remove(p2);
-                            ((UEArrayProperty)t).Items = tmp.ToArray();
+                            pr.Items = tmp.ToArray();
                             prop.Properties.Add(p2);
                         }
                 }
-                else if (!(t is UENoneProperty)) throw new FormatException($"ReskinEditorData contains foreign property {t.Name} (Type: {t.GetType()})");
+                else if (t is not UENoneProperty) throw new FormatException($"ReskinEditorData contains foreign property {t.Name} (Type: {t.GetType()})");
             }
             //last is UENone
-            if (!(prp.Properties[^1] is UENoneProperty)) prp.Properties.Add(new UENoneProperty());
+            if (prp.Properties[^1] is not UENoneProperty) prp.Properties.Add(new UENoneProperty());
 
-            if (!(prop.Properties[^1] is UENoneProperty)) prop.Properties.Add(new UENoneProperty());
+            if (prop.Properties[^1] is not UENoneProperty) prop.Properties.Add(new UENoneProperty());
 
             if (prop.Properties.Count != 7) throw new FormatException($"Number of properties is incorrect (expected: 7, actual: {prop.Properties.Count})");
 
@@ -337,10 +336,10 @@ namespace TSW3LM
 
         private static Property IdentifyMisplacedProperty(UEProperty p)
         {
-            if (p is UEStringProperty)
+            if (p is UEStringProperty pr)
             {
-                if (p.Name == "ID" && p.Type == "NameProperty" && ((UEStringProperty)p).Value.StartsWith("L_")) return Property.ID;
-                if (p.Name == "BaseDefinition" && p.Type == "SoftObjectProperty") return Property.BASE_DEFINITION;
+                if (pr.Name == "ID" && pr.Type == "NameProperty" && pr.Value.StartsWith("L_")) return Property.ID;
+                if (pr.Name == "BaseDefinition" && pr.Type == "SoftObjectProperty") return Property.BASE_DEFINITION;
             }
             else if (p is UEDateTimeStructProperty)
             {
@@ -350,13 +349,13 @@ namespace TSW3LM
             {
                 if (p.Name == "DisplayName") return Property.DISPLAY_NAME;
             }
-            else if (p is UEArrayProperty)
+            else if (p is UEArrayProperty pr2)
             {
-                if (p.Name == "ReskinnedElements" && ((UEArrayProperty)p).ItemType == "StructProperty") return Property.RESKINNED_ELEMENTS;
+                if (p.Name == "ReskinnedElements" && pr2.ItemType == "StructProperty") return Property.RESKINNED_ELEMENTS;
             }
-            else if (p is UEGenericStructProperty)
+            else if (p is UEGenericStructProperty pr3)
             {
-                if (p.Name == "ReskinEditorData" && ((UEGenericStructProperty)p).StructType == "DTGReskinEditData") return Property.RESKIN_EDITOR_DATA;
+                if (p.Name == "ReskinEditorData" && pr3.StructType == "DTGReskinEditData") return Property.RESKIN_EDITOR_DATA;
             }
             return Property.UNKNOWN;
         }
@@ -375,12 +374,12 @@ namespace TSW3LM
         internal static long DetermineValueLength(UEProperty prop, CVL calc)
         {
             FileStream f = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm.tmp", FileMode.Create, FileAccess.Write);
-            BinaryWriter w = new BinaryWriter(f);
+            BinaryWriter w = new(f);
             prop.Serialize(w);
             w.Close();
             f.Close();
             f = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm.tmp", FileMode.Open, FileAccess.Read);
-            BinaryReader r = new BinaryReader(f);
+            BinaryReader r = new(f);
             long result = calc(r);
             r.Close();
             f.Close();
@@ -400,7 +399,7 @@ namespace TSW3LM
 
         internal static string ByteArrayToHexString(byte[] ba)
         {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            StringBuilder hex = new(ba.Length * 2);
             foreach (byte b in ba)
                 hex.AppendFormat("{0:x2}", b);
             return hex.ToString();
@@ -415,21 +414,21 @@ namespace TSW3LM
 
         internal static string Get(string v)
         {
-            switch (v)
+            return v switch
             {
-                case COMPRESSED_TSW3: return COMPRESSED_TSW3;
-                case DESERIALIZED_TSW3: return DESERIALIZED_TSW3;
-                case CONVERTED_FROM_TSW2: return CONVERTED_FROM_TSW2;
-                default: throw new ArgumentException("Livery is of unknown type " + v);
-            }
+                COMPRESSED_TSW3 => COMPRESSED_TSW3,
+                DESERIALIZED_TSW3 => DESERIALIZED_TSW3,
+                CONVERTED_FROM_TSW2 => CONVERTED_FROM_TSW2,
+                _ => throw new ArgumentException("Livery is of unknown type " + v),
+            };
         }
     }
 
     class Log
     {
-        private static readonly object locker = new object();
+        private static readonly object locker = new();
 
-        private static readonly Dictionary<string, LogLevel> LogPaths = new Dictionary<string, LogLevel>();
+        private static readonly Dictionary<string, LogLevel> LogPaths = new();
 
         /// <summary>The highest LogLevel shown on the Console</summary>
         public static LogLevel ConsoleLevel = LogLevel.INFO;

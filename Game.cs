@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ICSharpCode.SharpZipLib.Zip.Compression;
-using System.Text;
 
 namespace TSW3LM
 {
@@ -19,7 +17,7 @@ namespace TSW3LM
         private static UEArrayProperty GvasRawArray;
 #pragma warning restore CS8618
 
-        internal static Dictionary<int, Livery> Liveries = new Dictionary<int, Livery>();
+        internal static Dictionary<int, Livery> Liveries = new();
 
         internal static string? Load()
         {
@@ -71,7 +69,7 @@ namespace TSW3LM
                         Name = "CompressedReskins",
                         Type = "ArrayProperty",
                         ItemType = "StructProperty",
-                        Items = new UEProperty[] { }
+                        Items = Array.Empty<UEProperty>()
                     };
                     GameData.Properties.Add(GvasRawArray);
                 }
@@ -87,7 +85,7 @@ namespace TSW3LM
                         Name = "Reskins",
                         Type = "ArrayProperty",
                         ItemType = "StructProperty",
-                        Items = new UEProperty[] { }
+                        Items = Array.Empty<UEProperty>()
                     };
                     GameData.Properties.Add(GvasRawArray);
                 }

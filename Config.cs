@@ -1,5 +1,4 @@
-﻿#nullable disable warnings
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
 
@@ -7,9 +6,10 @@ namespace TSW3LM
 {
     static class Config
     {
-        internal static Entries entries = null;
-
+#pragma warning disable CS8618 // Ein Non-Nullable-Feld muss beim Beenden des Konstruktors einen Wert ungleich NULL enthalten. Erwägen Sie die Deklaration als Nullable.
+        internal static Entries entries;
         private static string Path;
+#pragma warning restore CS8618 // Ein Non-Nullable-Feld muss beim Beenden des Konstruktors einen Wert ungleich NULL enthalten. Erwägen Sie die Deklaration als Nullable.
 
         internal static void Init(string path)
         {
@@ -95,7 +95,7 @@ namespace TSW3LM
             public int MaxGameLiveries = 300;
             public bool CollectLiveryData = true;
 
-            public static readonly Dictionary<string, string> DEFAULTS = new Dictionary<string, string>
+            public static readonly Dictionary<string, string> DEFAULTS = new()
             {
                 { "SkipAutosave", "false" },
                 {"GamePath", "\"\"" },

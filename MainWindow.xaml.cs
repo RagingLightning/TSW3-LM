@@ -1,4 +1,4 @@
-﻿#nullable disable warnings
+﻿#pragma warning disable IDE1006
 using Microsoft.Win32;
 using System;
 using System.IO;
@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
 using GvasFormat.Serialization.UETypes;
+using System.Threading.Tasks;
 
 namespace TSW3LM
 {
@@ -19,11 +20,11 @@ namespace TSW3LM
     /// </summary>
     public partial class MainWindow : Window
     {
-        internal static MainWindow INSTANCE;
+        internal static MainWindow? INSTANCE;
 
         private const string VERSION = "0.9.0";
 
-        private Thread InfoCollectorThread = new Thread(GameLiveryInfo.AutoRefresh);
+        private Thread InfoCollectorThread = new(GameLiveryInfo.AutoRefresh);
 
         [DllImport("Kernel32.dll")]
         public static extern bool AttachConsole(int processId);
@@ -37,7 +38,7 @@ namespace TSW3LM
             AttachConsole(-1);
 
             Config.Init("TSW3LM.json");
-            if (!int.TryParse(VERSION.Split('.')[^1], out int _))
+            if (!int.TryParse(VERSION.Split('.')[^1], out _))
                 Config.DevUpdates = true;
 
             Log.AddLogFile("TSW3LM.log", Log.LogLevel.INFO);
@@ -95,35 +96,10 @@ namespace TSW3LM
             Config.SkipAutosave = false;
 
             if (Config.AutoUpdate)
-            {
-                try
-                {
-                    Log.Message("Checking for updates...", "MW:<init>");
-                    string? newVersion = Utils.CheckUpdate(VERSION);
-                    if (newVersion != null)
-                        new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
-                }
-                catch (WebException e)
-                {
-                    Log.Message($"Unable to check for updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
-                }
-
-            }
+                _ = UpdateCheck();
 
             if (Config.DevUpdates)
-            {
-                try
-                {
-                    Log.Message("Checking for dev updates...", "MW::<init>");
-                    string? newVersion = Utils.CheckDevUpdate(VERSION);
-                    if (newVersion != null)
-                        new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
-                }
-                catch (WebException e)
-                {
-                    Log.Message($"Unable to check for dev updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
-                }
-            }
+                _ = DevUpdateCheck();
 
             InitializeComponent();
 
@@ -140,7 +116,7 @@ namespace TSW3LM
                 if (File.Exists(Config.GamePath))
                 {
                     txtGameDir.Text = Config.GamePath;
-                    string GameStatus = Game.Load();
+                    var GameStatus = Game.Load();
                     if (GameStatus != null)
                     {
                         lblMessage.Content = $"ERROR WHILE LOADING GAME LIVERIES:\n{GameStatus}";
@@ -176,6 +152,36 @@ namespace TSW3LM
 
         }
 
+        private static async Task UpdateCheck()
+        {
+            try
+            {
+                Log.Message("Checking for updates...", "MW:<init>");
+                string? newVersion = await Utils.CheckUpdate(VERSION);
+                if (newVersion != null)
+                    new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
+            }
+            catch (WebException e)
+            {
+                Log.Message($"Unable to check for updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
+            }
+        }
+
+        private static async Task DevUpdateCheck()
+        {
+            try
+            {
+                Log.Message("Checking for dev updates...", "MW::<init>");
+                string? newVersion = await Utils.CheckDevUpdateAsync(VERSION);
+                if (newVersion != null)
+                    new UpdateNotifier(VERSION, newVersion, $"https://github.com/RagingLightning/TSW3-LM/releases/tag/v{newVersion}").ShowDialog();
+            }
+            catch (WebException e)
+            {
+                Log.Message($"Unable to check for dev updates: {e.Message}", "MW:<init>", Log.LogLevel.WARNING);
+            }
+        }
+
         private void Close(object sender, CancelEventArgs e)
         {
             //GameLiveryInfo.Running = false;
@@ -183,7 +189,7 @@ namespace TSW3LM
             FreeConsole();
             Environment.Exit(0);
         }
-        internal void PrintHelp()
+        internal static void PrintHelp()
         {
             Console.WriteLine();
             Console.WriteLine("╔════════════════════════════════════════════════════════════════════╗");
@@ -338,7 +344,7 @@ namespace TSW3LM
             if (info.Name == "<unnamed>" && info.Model == "<unknown>")
             {
                 Log.Message($"Livery Info not set, asking for file name", "MW:ExportLivery", Log.LogLevel.DEBUG);
-                SaveFileDialog Dialog = new SaveFileDialog
+                SaveFileDialog Dialog = new()
                 {
                     InitialDirectory = Config.LibraryPath,
                     Filter = "TSW3 Livery File (*.tsw3)|*.tsw3",
@@ -354,7 +360,7 @@ namespace TSW3LM
                 }
             }
 
-            Library.Livery ll = new Library.Livery(fileName, gl.GvasBaseProperty, name: info.Name, model: info.Model, type: gl.Type);
+            Library.Livery ll = new(fileName, gl.GvasBaseProperty, name: info.Name, model: info.Model, type: gl.Type);
             Library.Add(ll);
             Library.Save(ll);
 
@@ -364,7 +370,7 @@ namespace TSW3LM
             UpdateLibraryGui();
         }
 
-        private void UpdateLiveryInfoWindow(Game.Livery livery, bool show)
+        private static void UpdateLiveryInfoWindow(Game.Livery? livery, bool show)
         {
             if (livery == null)
             {
@@ -381,10 +387,10 @@ namespace TSW3LM
             if (show) LiveryInfoWindow.INSTANCE.Show();
         }
 
-        internal void ShowStatusText(string text, int duration = 2500)
+        internal void ShowStatusText(string text)//, int duration = 2500)
         {
             lblMessage.Content = text;
-            new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
+            //new Timer((state) => lblMessage.Dispatcher.BeginInvoke((Action)(() => { lblMessage.Content = ""; lblMessage.InvalidateVisual(); }), null), null, duration, Timeout.Infinite);
         }
 
 
@@ -414,7 +420,7 @@ namespace TSW3LM
             if (tab_Tsw3.IsSelected)
                 ImportLivery(Library.Liveries[lstLibraryLiveries.SelectedIndex]);
             else if (tab_Tsw2.IsSelected)
-                ImportTsw2Livery($"{Config.LibraryPath}\\{lstLibraryLiveries.SelectedItem.ToString().Split("<")[^1].Split(">")[0]}");
+                ImportTsw2Livery($"{Config.LibraryPath}\\{lstLibraryLiveries.SelectedItem?.ToString()?.Split("<")[^1].Split(">")[0]}");
             UpdateGameGui();
         }
 
@@ -423,10 +429,12 @@ namespace TSW3LM
             try
             {
                 lblMessage.Content = "";
-                OpenFileDialog Dialog = new OpenFileDialog();
-                Dialog.Filter = "TSW2 Livery (*.tsw2liv)|*.tsw2liv";
-                Dialog.DefaultExt = "*.tsw2liv";
-                Dialog.InitialDirectory = Config.LibraryPath;
+                OpenFileDialog Dialog = new()
+                {
+                    Filter = "TSW2 Livery (*.tsw2liv)|*.tsw2liv",
+                    DefaultExt = "*.tsw2liv",
+                    InitialDirectory = Config.LibraryPath
+                };
                 if (Dialog.ShowDialog() == true)
                 {
                     ImportTsw2Livery(Dialog.FileName);
@@ -450,8 +458,10 @@ namespace TSW3LM
             try
             {
                 lblMessage.Content = "";
-                VistaFolderBrowserDialog Dialog = new VistaFolderBrowserDialog();
-                Dialog.Description = "Select a folder for all your liveries to be exported to";
+                VistaFolderBrowserDialog Dialog = new()
+                {
+                    Description = "Select a folder for all your liveries to be exported to"
+                };
                 if (Dialog.ShowDialog() == true)
                 {
                     Log.Message("Changing library path...", "MW:LibDirClick", Log.LogLevel.DEBUG);
@@ -477,8 +487,10 @@ namespace TSW3LM
             try
             {
                 lblMessage.Content = "";
-                VistaFolderBrowserDialog Dialog = new VistaFolderBrowserDialog();
-                Dialog.Description = "Select the TSW3 game folder";
+                VistaFolderBrowserDialog Dialog = new()
+                {
+                    Description = "Select the TSW3 game folder"
+                };
                 if (Dialog.ShowDialog() == true)
                 {
                     Log.Message("Changing game path...", "MW:GameDirClick", Log.LogLevel.DEBUG);
@@ -511,10 +523,12 @@ namespace TSW3LM
         private void btnBackup_Click(object sender, RoutedEventArgs e)
         {
             lblMessage.Content = "";
-            SaveFileDialog Dialog = new SaveFileDialog();
-            Dialog.InitialDirectory = Config.LibraryPath;
-            Dialog.Filter = "TSW3 Livery Backup (*.bak3)|*.bak3";
-            Dialog.DefaultExt = "*.bak3";
+            SaveFileDialog Dialog = new()
+            {
+                InitialDirectory = Config.LibraryPath,
+                Filter = "TSW3 Livery Backup (*.bak3)|*.bak3",
+                DefaultExt = "*.bak3"
+            };
             if (Dialog.ShowDialog() == true)
             {
                 byte[] Contents = File.ReadAllBytes(Config.GamePath);
@@ -526,10 +540,12 @@ namespace TSW3LM
         private void btnRestore_Click(object sender, RoutedEventArgs e)
         {
             lblMessage.Content = "";
-            OpenFileDialog Dialog = new OpenFileDialog();
-            Dialog.Filter = "TSW3 Livery Backup (*.bak3)|*.bak3";
-            Dialog.DefaultExt = "*.bak3";
-            Dialog.InitialDirectory = Config.LibraryPath;
+            OpenFileDialog Dialog = new()
+            {
+                Filter = "TSW3 Livery Backup (*.bak3)|*.bak3",
+                DefaultExt = "*.bak3",
+                InitialDirectory = Config.LibraryPath
+            };
             if (Dialog.ShowDialog() == true)
             {
                 byte[] Contents = File.ReadAllBytes(Dialog.FileName);
@@ -611,10 +627,10 @@ namespace TSW3LM
         public bool Useable
         {
             get { return _useable; }
-            set { _useable = value; OnPropertyChanged("Useable"); }
+            set { _useable = value; OnPropertyChanged(nameof(Useable)); }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

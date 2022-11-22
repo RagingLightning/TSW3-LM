@@ -1,12 +1,8 @@
 ﻿using Ookii.Dialogs.Wpf;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using TSW3LM.Options;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace TSW3LM
 {
@@ -17,7 +13,7 @@ namespace TSW3LM
     {
         private Config.Entries localEntries;
 
-        private List<string> dirtyEntries = new List<string>();
+        private readonly List<string> dirtyEntries = new();
         public OptionsWindow()
         {
             Owner = Application.Current.MainWindow;
@@ -61,44 +57,54 @@ namespace TSW3LM
 
         private void BooleanOptionChange(object sender, RoutedEventArgs e)
         {
-            RadioButton btn = sender as RadioButton;
-            string key = btn.GroupName;
-            bool value = (btn.Content.ToString() == "true" && (bool)btn.IsChecked) || (btn.Content.ToString() == "false" && (bool)!btn.IsChecked);
+            if (sender is not RadioButton btn) return;
+            var key = btn.GroupName;
+#pragma warning disable CS8629
+            var value = (btn.Content.ToString() == "true" && (bool)btn.IsChecked) || (btn.Content.ToString() == "false" && (bool)!btn.IsChecked);
+#pragma warning restore CS8629
 
+#pragma warning disable CS8602
             typeof(Config.Entries).GetField(key).SetValue(localEntries, value);
+#pragma warning restore CS8602
             dirtyEntries.Add(key);
         }
 
         private void TextOptionChange(object sender, RoutedEventArgs e)
         {
-            TextBox box = sender as TextBox;
-            TextBlock keyBlock = box.FindName("key") as TextBlock;
+            if (sender is not TextBox box) return;
+            if (box.FindName("key") is not TextBlock keyBlock) return;
             string key = keyBlock.Text;
 
+#pragma warning disable CS8602
             typeof(Config.Entries).GetField(key).SetValue(localEntries, box.Text);
+#pragma warning restore CS8602
             dirtyEntries.Add(key);
         }
 
         private void NumberOptionChange(object sender, RoutedEventArgs e)
         {
-            TextBox box = sender as TextBox;
-            TextBlock keyBlock = box.FindName("key") as TextBlock;
+            if (sender is not TextBox box) return;
+            if (box.FindName("key") is not TextBlock keyBlock) return;
             string key = keyBlock.Text;
 
+#pragma warning disable CS8602
             typeof(Config.Entries).GetField(key).SetValue(localEntries, int.Parse(box.Text));
+#pragma warning restore CS8602
             dirtyEntries.Add(key);
 
         }
 
         private void FolderOptionChange(object sender, RoutedEventArgs e)
         {
-            Button btn = sender as Button;
-            TextBlock keyBlock = btn.FindName("key") as TextBlock;
+            if (sender is not Button btn) return;
+            if (btn.FindName("key") is not TextBlock keyBlock) return;
             string key = keyBlock.Text;
-            VistaFolderBrowserDialog dialog = new VistaFolderBrowserDialog();
+            VistaFolderBrowserDialog dialog = new();
             if (dialog.ShowDialog() == true)
             {
+#pragma warning disable CS8602
                 typeof(Config.Entries).GetField(key).SetValue(localEntries, dialog.SelectedPath);
+#pragma warning restore CS8602
             }
 
             MakeDataContext();
@@ -108,13 +114,15 @@ namespace TSW3LM
 
         private void FileOptionChange(object sender, RoutedEventArgs e)
         {
-            Button btn = sender as Button;
-            TextBlock keyBlock = btn.FindName("key") as TextBlock;
+            if (sender is not Button btn) return;
+            if (btn.FindName("key") is not TextBlock keyBlock) return;
             string key = keyBlock.Text;
-            VistaFolderBrowserDialog dialog = new VistaFolderBrowserDialog();
+            VistaFolderBrowserDialog dialog = new();
             if (dialog.ShowDialog() == true)
             {
+#pragma warning disable CS8602
                 typeof(Config.Entries).GetField(key).SetValue(localEntries, dialog.SelectedPath);
+#pragma warning restore CS8602
             }
 
             MakeDataContext();

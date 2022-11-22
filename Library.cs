@@ -9,14 +9,14 @@ namespace TSW3LM
 {
     internal static class Library
     {
-        internal static Dictionary<int, Livery> Liveries = new Dictionary<int, Livery>();
+        internal static Dictionary<int, Livery> Liveries = new();
 
         internal static void Load()
         {
             Liveries.Clear();
 
             Log.Message("Loading library...", "L:Load");
-            DirectoryInfo Info = new DirectoryInfo(Config.LibraryPath);
+            DirectoryInfo Info = new(Config.LibraryPath);
             int i = 0;
             foreach (FileInfo file in Info.GetFiles("*.tsw3", SearchOption.TopDirectoryOnly))
             {
