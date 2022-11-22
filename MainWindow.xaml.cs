@@ -22,7 +22,7 @@ namespace TSW3LM
     {
         internal static MainWindow? INSTANCE;
 
-        private const string VERSION = "0.9.0";
+        private const string VERSION = "1.0.0";
 
         private Thread InfoCollectorThread = new(GameLiveryInfo.AutoRefresh);
 
