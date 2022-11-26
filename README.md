@@ -1,13 +1,13 @@
-# TSW2-Livery-Manager
-A helper program for Train Sim World 2, allowing for sharing of individual liveries
+# TSW3 Livery-Manager
+
+## Functionality
+- Exporting of single liveries to be shared on online platforms
+- Import of previously exported liveries
+- Deserialization of TSW3 Liveries to allow for modification
+- Conversion of TSW2 liveries to TSW3
 
 ## Installation
-In order to use this tool, .NET Core 3.1 needs to be installed ([DOWNLOAD](https://dotnet.microsoft.com/download/dotnet-core/3.1))
-
-zip-files containing all program files can be found in the [release section](https://github.com/RagingLightning/TSW2-Livery-Manager/releases/latest)
+The tool is self-contained. To use it, simply extract the [released .zip](https://github.com/RagingLightning/TSW3-LM/releases/latest) anywhere you want and run the .exe
 
 ## Usage
-A simple usage overview is provided in the project's [wiki](https://github.com/RagingLightning/TSW2-Livery-Manager/wiki/(1)-Getting-Started)
-
-## Troubleshooting
-If you are running the tool on a 64bit-System and .NET Core is not recognized, try also installing the 32bit version of .NET Core 3.1
+A simple usage overview is provided in the project's [wiki](https://github.com/RagingLightning/TSW3-LM/wiki/(1)-Getting-Started)
