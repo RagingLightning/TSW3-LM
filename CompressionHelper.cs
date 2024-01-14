@@ -16,6 +16,8 @@ namespace TSW3LM
 
         public static Game.Livery? DecompressReskin(UEGenericStructProperty structProperty)
         {
+            //if (!Directory.Exists($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm"))
+            //  Directory.CreateDirectory($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm");
             var compressedReskin = structProperty.Properties.FirstOrDefault(p => p is UEArrayProperty && p.Name == "CompressedReskin") as UEArrayProperty;
 
             if (compressedReskin?.Items?.FirstOrDefault() is not UEByteProperty byteString)
@@ -34,20 +36,23 @@ namespace TSW3LM
             } while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length);
 
             var livery = bytes.ToArray();
-            File.WriteAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lmdecomp.tmp", livery);
+            //File.WriteAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\aaa_decompress.tmp", livery);
             var decompressedLivery = Utils.ConvertTSW3(livery, true);
+            //if (decompressedLivery is not null)
+            //  File.WriteAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\D_{decompressedLivery.ID}.tmp", livery);
             return decompressedLivery;
         }
 
-        public static UEGenericStructProperty CompressReskin(UEGenericStructProperty structProperty)
+        public static UEGenericStructProperty CompressReskin(UEGenericStructProperty structProperty, string id)
         {
             // Convert the uncompressed livery into TSW3s compression format
             using var ms = new MemoryStream();
+            //using var ms = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\C_{id}.tmp", FileMode.Create, FileAccess.Write, FileShare.None);
             using var writer = new BinaryWriter(ms);
             structProperty.SerializeStructProp(writer);
 
-            ms.Position = 0;
             var bytes = ms.ToArray();
+            //var bytes = File.ReadAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\C_{id}.tmp");
 
             using var byteStream = new MemoryStream();
             using var byteWriter = new BinaryWriter(byteStream);

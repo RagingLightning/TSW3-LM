@@ -104,7 +104,7 @@ namespace TSW3LM
                         {
                             string name = ((UETextProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UETextProperty && p.Name == "DisplayName")).Value;
                             string model = ((UEStringProperty)decompressedLivery.GvasBaseProperty.Properties.First(p => p is UEStringProperty && p.Name == "BaseDefinition")).Value.Split(".")[^1];
-                            string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model);
+                            string newId = GameLiveryInfo.SetInfo(decompressedLivery.ID, name, model, true);
 
                             decompressedLivery.ID = newId;
 
@@ -146,7 +146,7 @@ namespace TSW3LM
             foreach (Livery livery in Liveries.Values.Where(p => p.Type == LiveryType.DESERIALIZED_TSW3))
             {
                 // Compress
-                var compressedBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty);
+                var compressedBaseProperty = CompressionHelper.CompressReskin(livery.GvasBaseProperty, livery.ID);
                 zip.Add(compressedBaseProperty);
             }
 

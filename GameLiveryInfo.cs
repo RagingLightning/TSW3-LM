@@ -28,8 +28,8 @@ namespace TSW3LM
         internal static void Init(string path)
         {
             Log.Message("LiveryInfo initializing...", "LI:Init");
-            Log.Message($"|> Path: {path}", "LI:Init", Log.LogLevel.DEBUG);
-            Path = path;
+            Log.Message($"|> Path: {path}\\zz_LiveryInfo.json", "LI:Init", Log.LogLevel.DEBUG);
+            Path = $"{path}\\zz_LiveryInfo.json";
 
             if (File.Exists(Path))
             {

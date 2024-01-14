@@ -100,7 +100,7 @@ namespace TSW3LM {
       if (Config.LibraryPath != "") {
         if (File.Exists("LiveryInfo.json"))
           File.Move("LiveryInfo.json", $"{Config.LibraryPath}\\zz_LiveryInfo.json");
-        GameLiveryInfo.Init($"{Config.LibraryPath}\\zz_LiveryInfo.json");
+        GameLiveryInfo.Init(Config.LibraryPath);
       }
 
       if (Config.GamePath != "") {
@@ -414,6 +414,7 @@ namespace TSW3LM {
           Log.Message($"Changed library path to {Config.LibraryPath}", "MW:LibDirClick");
         }
         Library.Load();
+        GameLiveryInfo.Init(Config.LibraryPath);
         UpdateLibraryGui();
 
         if (Config.LibraryPath != "" && Config.GamePath != "")
