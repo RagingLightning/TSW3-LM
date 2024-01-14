@@ -5,6 +5,8 @@ VisualStudioVersion = 17.3.32819.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TSW3LM", "TSW3LM.csproj", "{5C950AC4-D4B8-4C1C-AC59-DA1507501F5F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GvasFormat", "..\..\Users\RagingLightning\source\repos\gvas-converter\GvasFormat\GvasFormat.csproj", "{197EAD89-CDDA-459C-B674-9AF02A02D495}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{5C950AC4-D4B8-4C1C-AC59-DA1507501F5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C950AC4-D4B8-4C1C-AC59-DA1507501F5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C950AC4-D4B8-4C1C-AC59-DA1507501F5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{197EAD89-CDDA-459C-B674-9AF02A02D495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{197EAD89-CDDA-459C-B674-9AF02A02D495}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{197EAD89-CDDA-459C-B674-9AF02A02D495}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{197EAD89-CDDA-459C-B674-9AF02A02D495}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

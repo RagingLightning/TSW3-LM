@@ -16,6 +16,7 @@ namespace TSW3LM
 {
     static class Utils
     {
+        private static readonly HttpClient http = new();
         private static readonly Random random = new();
 
         internal static string GenerateHex(int digits)
@@ -30,8 +31,9 @@ namespace TSW3LM
 
         internal static async Task<string?> CheckUpdate(string version)
         {
-            HttpResponseMessage updateRx = await new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat"));
-            var updateResponse = updateRx.Content.ToString();
+            using var updateRx = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/version.dat"));
+            using var content = updateRx.Content;
+            var updateResponse = await content.ReadAsStringAsync();
             if (updateResponse == null) return null;
             Log.Message($"Got version information: {version}->{updateResponse}", "U:CheckUpdate", Log.LogLevel.DEBUG);
             var NewVersion = updateResponse.Split('.');
@@ -60,10 +62,11 @@ namespace TSW3LM
             return null;
         }
 
-        internal static async Task<string?> CheckDevUpdateAsync(string version)
+        internal static async Task<string?> CheckDevUpdate(string version)
         {
-            HttpResponseMessage updateRx = await new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/devversion.dat"));
-            var updateResponse = updateRx.Content.ToString();
+            using var updateRx = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://raw.githubusercontent.com/RagingLightning/TSW3-LM/deploy/devversion.dat"));
+            using var content = updateRx.Content;
+            var updateResponse = await content.ReadAsStringAsync();
             if (updateResponse == null) return null;
             Log.Message($"Got version information: {version}->{updateResponse}", "U:CheckDevUpdate", Log.LogLevel.DEBUG);
             string[] NewVersion = updateResponse.Split('.');

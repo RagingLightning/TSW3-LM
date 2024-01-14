@@ -34,6 +34,7 @@ namespace TSW3LM
             } while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length);
 
             var livery = bytes.ToArray();
+            File.WriteAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lmdecomp.tmp", livery);
             var decompressedLivery = Utils.ConvertTSW3(livery, true);
             return decompressedLivery;
         }
