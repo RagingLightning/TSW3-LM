@@ -50,6 +50,7 @@ namespace TSW3LM
             //using var ms = File.Open($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\C_{id}.tmp", FileMode.Create, FileAccess.Write, FileShare.None);
             using var writer = new BinaryWriter(ms);
             structProperty.SerializeStructProp(writer);
+            //ms.Flush(); ms.Close(); ms.Dispose();
 
             var bytes = ms.ToArray();
             //var bytes = File.ReadAllBytes($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Temp\\tsw3lm\\C_{id}.tmp");
